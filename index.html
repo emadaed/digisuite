@@ -181,27 +181,51 @@
   </footer>
 
   <script>
-    function toggleLanguage() {
-      const english = document.querySelector('.english');
-      const urdu = document.querySelector('.urdu');
-      if (english.style.display === 'none') {
-        english.style.display = 'block';
-        urdu.style.display = 'none';
-      } else {
-        english.style.display = 'none';
-        urdu.style.display = 'block';
-      }
+  function toggleLanguage() {
+    const english = document.querySelector('.english');
+    const urdu = document.querySelector('.urdu');
+    if (english.style.display === 'none') {
+      english.style.display = 'block';
+      urdu.style.display = 'none';
+    } else {
+      english.style.display = 'none';
+      urdu.style.display = 'block';
     }
-    function toggleLogin() {
-      const modal = document.getElementById("loginModal");
-      modal.style.display = modal.style.display === "block" ? "none" : "block";
+  }
+
+  function toggleLogin() {
+    const modal = document.getElementById("loginModal");
+    modal.style.display = modal.style.display === "block" ? "none" : "block";
+  }
+
+  function loginUser() {
+    const email = document.getElementById("emailInput").value;
+    alert(`Welcome, ${email}! (Login logic to be added)`);
+    toggleLogin();
+  }
+
+  function filterCards() {
+    const query = document.getElementById("searchInput").value.toLowerCase();
+    const cards = document.querySelectorAll(".card");
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      card.style.display = text.includes(query) ? "block" : "none";
+    });
+  }
+
+  // Flowing title animation
+  const title = "DigiSuite";
+  let index = 0;
+  let direction = 1;
+  function animateTitle() {
+    document.getElementById("animatedTitle").textContent = title.slice(0, index);
+    if (direction === 1) {
+      index++;
+      if (index > title.length) direction = -1;
+    } else {
+      index--;
+      if (index < 0) direction = 1;
     }
-    function loginUser() {
-      const email = document.getElementById("emailInput").value;
-      alert(`Welcome, ${email}! (Login logic to be added)`);
-      toggleLogin();
-    }
-    function filterCards() {
-      const query = document.getElementById("searchInput").value.toLowerCase();
-      const cards = document.querySelectorAll(".card");
-      cards.forEach(card
+  }
+  setInterval(animateTitle, 200);
+</script>
