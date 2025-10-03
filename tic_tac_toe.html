@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tic-Tac-Toe Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f8fb;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      color: #007acc;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 10px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      font-size: 2em;
+      background-color: white;
+      border: 2px solid #007acc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .cell.taken {
+      cursor: default;
+      background-color: #e6f2ff;
+    }
+    #message {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+    #score {
+      margin-top: 10px;
+      font-size: 1em;
+      color: #555;
+    }
+    button {
+      margin-top: 20px;
+      padding: 8px 16px;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎮 Tic-Tac-Toe</h1>
+  <div class="board" id="board"></div>
+  <div id="message"></div>
+  <div id="score">You: 0 | Computer: 0</div>
+  <button onclick="restartGame()">Play Again</button>
+
+  <script>
+    let board = [];
+    let playerScore = 0;
+    let computerScore = 0;
+    const boardElement = document.getElementById("board");
+    const message = document.getElementById("message");
+    const scoreDisplay = document.getElementById("score");
+
+    function initBoard() {
+      board = Array.from({ length: 3 }, (_, r) =>
+        Array.from({ length: 3 }, (_, c) => r * 3 + c + 1)
+      );
+      boardElement.innerHTML = "";
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.addEventListener("click", playerMove);
+          boardElement.appendChild(cell);
+        }
+      }
+      board[1][1] = "X"; // Computer starts
+      updateBoard();
+    }
+
+    function updateBoard() {
+      const cells = document.querySelectorAll(".cell");
+      cells.forEach(cell => {
+        const r = cell.dataset.row;
+        const c = cell.dataset.col;
+        const val = board[r][c];
+        cell.textContent = typeof val === "number" ? "" : val;
+        cell.classList.toggle("taken", val === "X" || val === "O");
+      });
+    }
+
+    function playerMove(e) {
+      const r = +e.target.dataset.row;
+      const c = +e.target.dataset.col;
+      if (board[r][c] === "X" || board[r][c] === "O") return;
+      board[r][c] = "O";
+      updateBoard();
+      if (checkVictory("O")) {
+        playerScore++;
+        message.textContent = "✅ You won!";
+        endGame();
+        return;
+      }
+      if (getFreeFields().length === 0) {
+        message.textContent = "🤝 It's a tie!";
+        endGame();
+        return;
+      }
+      computerMove();
+    }
+
+    function computerMove() {
+      const free = getFreeFields();
+
+      // Try to win
+      for (let [r, c] of free) {
+        board[r][c] = "X";
+        if (checkVictory("X")) {
+          updateBoard();
+          message.textContent = "❌ Computer won!";
+          computerScore++;
+          endGame();
+          return;
+        }
+        board[r][c] = r * 3 + c + 1;
+      }
+
+      // Try to block
+      for (let [r, c] of free) {
+        board[r][c] = "O";
+        if (checkVictory("O")) {
+          board[r][c] = "X";
+          updateBoard();
+          return;
+        }
+        board[r][c] = r * 3 + c + 1;
+      }
+
+      // Random move
+      const [r, c] = free[Math.floor(Math.random() * free.length)];
+      board[r][c] = "X";
+      updateBoard();
+      if (checkVictory("X")) {
+        message.textContent = "❌ Computer won!";
+        computerScore++;
+        endGame();
+      } else if (getFreeFields().length === 0) {
+        message.textContent = "🤝 It's a tie!";
+        endGame();
+      }
+    }
+
+    function getFreeFields() {
+      const free = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          if (board[r][c] !== "X" && board[r][c] !== "O") {
+            free.push([r, c]);
+          }
+        }
+      }
+      return free;
+    }
+
+    function checkVictory(sign) {
+      for (let r = 0; r < 3; r++) {
+        if (board[r][0] === sign && board[r][1] === sign && board[r][2] === sign) return true;
+      }
+      for (let c = 0; c < 3; c++) {
+        if (board[0][c] === sign && board[1][c] === sign && board[2][c] === sign) return true;
+      }
+      if (board[0][0] === sign && board[1][1] === sign && board[2][2] === sign) return true;
+      if (board[0][2] === sign && board[1][1] === sign && board[2][0] === sign) return true;
+      return false;
+    }
+
+    function endGame() {
+      document.querySelectorAll(".cell").forEach(cell => {
+        cell.removeEventListener("click", playerMove);
+      });
+      scoreDisplay.textContent = `You: ${playerScore} | Computer: ${computerScore}`;
+    }
+
+    function restartGame() {
+      message.textContent = "";
+      initBoard();
+    }
+
+    // Start game
+    initBoard();
+  </script>
+
+</body>
+</html>
