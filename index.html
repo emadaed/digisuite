@@ -164,12 +164,12 @@
 
     <div class="section-title" style="margin-top:40px;">🛠️ Tools</div>
     <div class="card-grid">
-      <div class="card"><h3>Smart Replenishment</h3><p>Forecast stockouts and export urgency reports.</p><a href="smart_replenishment.html">Explore Tool →</a></div>
-       <div class="card"><h3>DigiReceipt</h3><p>Generate invoices, quotes, and audit-ready receipts.</p><a href="https://digireceipt-landing-pk.streamlit.app" target="_blank">Launch DigiReceipt →</a></div>
+      <div class="card"><h3>DigiReceipt</h3><p>Generate invoices, quotes, and audit-ready receipts.</p><a href="https://github.com/emadaed/digireceipt-landing" target="_blank">Launch DigiReceipt →</a></div>
       <div class="card"><h3>Sales Dashboard</h3><p>Visualize trends and top-selling items. (Coming Soon)</p></div>
       <div class="card"><h3>WhatsApp Integration</h3><p>Send receipts via WhatsApp. (Planned)</p></div>
       <div class="card"><h3>Tax Logic Engine</h3><p>Apply GST and custom tax rules. (In Development)</p></div>
       <div class="card"><h3>Game Zone</h3><p>Interactive games for learning and engagement.</p><a href="game_placeholder.html">Try Demo →</a></div>
+      <div class="card"><h3>Smart Replenishment</h3><p>Forecast stockouts and export urgency reports.</p><a href="smart_replenishment.html">Explore Tool →</a></div>
     </div>
   </div>
 
@@ -182,51 +182,41 @@
   </footer>
 
   <script>
-  function toggleLanguage() {
-    const english = document.querySelector('.english');
-    const urdu = document.querySelector('.urdu');
-    if (english.style.display === 'none') {
-      english.style.display = 'block';
-      urdu.style.display = 'none';
-    } else {
-      english.style.display = 'none';
-      urdu.style.display = 'block';
+    function toggleLanguage() {
+      const english = document.querySelector('.english');
+      const urdu = document.querySelector('.urdu');
+      if (english.style.display === 'none') {
+        english.style.display = 'block';
+        urdu.style.display = 'none';
+      } else {
+        english.style.display = 'none';
+        urdu.style.display = 'block';
+      }
     }
-  }
 
-  function toggleLogin() {
-    const modal = document.getElementById("loginModal");
-    modal.style.display = modal.style.display === "block" ? "none" : "block";
-  }
-
-  function loginUser() {
-    const email = document.getElementById("emailInput").value;
-    alert(`Welcome, ${email}! (Login logic to be added)`);
-    toggleLogin();
-  }
-
-  function filterCards() {
-    const query = document.getElementById("searchInput").value.toLowerCase();
-    const cards = document.querySelectorAll(".card");
-    cards.forEach(card => {
-      const text = card.textContent.toLowerCase();
-      card.style.display = text.includes(query) ? "block" : "none";
-    });
-  }
-
-  // Flowing title animation
-  const title = "DigiSuite";
-  let index = 0;
-  let direction = 1;
-  function animateTitle() {
-    document.getElementById("animatedTitle").textContent = title.slice(0, index);
-    if (direction === 1) {
-      index++;
-      if (index > title.length) direction = -1;
-    } else {
-      index--;
-      if (index < 0) direction = 1;
+    function toggleLogin() {
+      const modal = document.getElementById("loginModal");
+      modal.style.display = modal.style.display === "block" ? "none" : "block";
     }
-  }
-  setInterval(animateTitle, 200);
-</script>
+
+    function loginUser() {
+      const email = document.getElementById("emailInput").value;
+      alert(`Welcome, ${email}! (Login logic to be added)`);
+      toggleLogin();
+    }
+
+    function filterCards() {
+      const query = document.getElementById("searchInput").value.toLowerCase();
+      const cards = document.querySelectorAll(".card");
+      cards.forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.style.display = text.includes(query) ? "block" : "none";
+      });
+    }
+
+    const title = "DigiSuite";
+    let index = 0;
+    let direction = 1;
+    function animateTitle() {
+      document.getElementById("animatedTitle").textContent = title.slice(0, index);
+      if (
