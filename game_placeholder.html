@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Typing Game Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f8fb;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      color: #007acc;
+    }
+    #word {
+      font-size: 2em;
+      margin: 20px 0;
+    }
+    input {
+      padding: 10px;
+      font-size: 1.2em;
+      width: 300px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎮 Typing Game Demo</h1>
+  <p>Type the word below as fast as you can:</p>
+  <div id="word">microbusiness</div>
+  <input type="text" id="inputBox" placeholder="Type here..." />
+  <div id="result"></div>
+
+  <script>
+    const word = document.getElementById("word").textContent;
+    const inputBox = document.getElementById("inputBox");
+    const result = document.getElementById("result");
+    let startTime;
+
+    inputBox.addEventListener("focus", () => {
+      startTime = new Date().getTime();
+    });
+
+    inputBox.addEventListener("input", () => {
+      if (inputBox.value === word) {
+        const endTime = new Date().getTime();
+        const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
+        result.textContent = `✅ Well done! You typed it in ${timeTaken} seconds.`;
+        inputBox.disabled = true;
+      }
+    });
+  </script>
+
+</body>
+</html>
