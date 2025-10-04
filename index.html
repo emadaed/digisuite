@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Muhammad Ahmad | Operations Automation Architect</title>
+    <!-- Font Awesome for Icons (Tech Stack, Contact, Social) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         /* BASE STYLES */
         :root {
             --primary-color: #007bff; /* Blue for highlights */
             --secondary-color: #f8f9fa; /* Light gray for background */
             --text-color: #333;
-            --font-family: 'Arial', sans-serif;
+            --font-family: 'Inter', sans-serif;
+            --success-color: #28a745; /* Green for community CTAs */
         }
         body {
             font-family: var(--font-family);
@@ -44,6 +47,7 @@
             padding: 80px 20px;
             text-align: center;
             border-bottom: 5px solid var(--primary-color);
+            border-radius: 0 0 15px 15px;
         }
         #hero h1 {
             font-size: 2.5em;
@@ -60,22 +64,22 @@
             background-color: var(--primary-color);
             color: white;
             padding: 12px 25px;
-            border-radius: 5px;
+            border-radius: 8px;
             font-weight: bold;
             letter-spacing: 1px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
         .cta-button:hover {
             background-color: #0056b3;
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         /* CORE SERVICES */
         #services {
             padding: 60px 20px;
             text-align: center;
-        }
-        #services h2 {
-            margin-bottom: 40px;
         }
         .skill-list {
             list-style: none;
@@ -91,9 +95,13 @@
             padding: 20px;
             text-align: left;
             border-radius: 8px;
-            flex-basis: calc(33% - 20px); /* 3 items per row on desktop */
-            min-width: 300px; /* Adjust for mobile */
+            flex-basis: calc(33% - 20px); 
+            min-width: 300px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: border-color 0.3s;
+        }
+        .skill-list li:hover {
+             border-color: var(--primary-color);
         }
         .skill-list li strong {
             color: var(--primary-color);
@@ -114,36 +122,76 @@
             background-color: white;
             padding: 30px;
             margin-bottom: 30px;
-            border-radius: 8px;
+            border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .case-study h3 {
-            border-left: 4px solid var(--primary-color);
+            border-left: 5px solid var(--primary-color);
             padding-left: 15px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
-        .case-study img {
+        .case-study-visual {
+            margin: 20px 0;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        .case-study-visual img {
             max-width: 100%;
             height: auto;
-            border-radius: 6px;
-            margin-top: 20px;
+            display: block;
         }
         .case-section strong {
             display: block;
             margin-top: 15px;
-            color: var(--primary-color);
+            color: #212529;
+            font-size: 1.1em;
+        }
+        .tech-icons {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+            font-size: 1.5em;
         }
 
-        /* ABOUT & MISSION */
+        /* ABOUT & CREDENTIALS (DETAILED) */
         #about {
             padding: 60px 20px;
             text-align: center;
         }
-        #about p {
-            max-width: 900px;
-            margin: 20px auto;
+        #about h3 {
+            color: var(--primary-color);
+        }
+        #about ul {
+            text-align: left;
+            list-style-type: none;
+            padding-left: 0;
+            line-height: 2;
+        }
+        #about ul li {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: flex-start;
+        }
+        #about ul li .fa-check-circle {
+            margin-top: 4px;
         }
 
+
+        /* COMMUNITY SECTION */
+        #community {
+            background-color: var(--secondary-color);
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 15px;
+            margin-top: 40px;
+        }
+        .community-card {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
         /* FOOTER & CONTACT */
         #footer {
             background-color: #212529;
@@ -154,20 +202,28 @@
         #footer a {
             color: #ccc;
             margin: 0 10px;
+            transition: color 0.3s;
         }
         #footer a:hover {
             color: var(--primary-color);
         }
         .contact-links {
             margin-top: 20px;
-            font-size: 1.1em;
+            font-size: 2em; /* Bigger icons for primary contact */
+            display: flex;
+            justify-content: center;
+            gap: 30px;
         }
-
-        /* MEDIA QUERIES for Mobile Optimization */
+        .social-links {
+            font-size: 1.5em;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        /* MEDIA QUERIES */
         @media (max-width: 768px) {
-            #hero {
-                padding: 60px 10px;
-            }
             #hero h1 {
                 font-size: 2em;
             }
@@ -180,6 +236,7 @@
 </head>
 <body>
 
+    <!-- 1. HEADER & TAGLINE -->
     <header id="hero">
         <div class="container">
             <h1>Muhammad Ahmad (TheOpsArchitect)</h1>
@@ -188,23 +245,24 @@
         </div>
     </header>
 
+    <!-- 2. CORE SERVICES -->
     <section id="services" class="container">
         <h2>What I Do: Core Services</h2>
         <ul class="skill-list">
             <li>
-                <strong>Supply Chain & Process Optimization:</strong> Leveraging MSc knowledge to analyze existing workflows, identify bottlenecks, and implement efficiency best practices.
+                <strong>Supply Chain & Process Optimization:</strong> Leveraging <i class="fas fa-microchip" style="color: #6c757d;"></i> MSc knowledge to analyze existing workflows, identify bottlenecks, and implement efficiency best practices.
             </li>
             <li>
-                <strong>Full-Stack Automation:</strong> Developing robust, customized tools (CLI, GUI, Google Sheets) for end-to-end automation, from order fetching to documentation.
+                <strong>Full-Stack Automation:</strong> Developing robust, customized tools (<i class="fab fa-python" style="color: #306998;"></i> <i class="fab fa-js-square" style="color: gold;"></i>) for end-to-end automation, from order fetching to documentation.
             </li>
             <li>
                 <strong>Data Modeling & Forecasting:</strong> Building predictive Python tools, such as stock replenishment systems, to ensure inventory control and flag stock-out risks.
             </li>
             <li>
-                <strong>Process-Driven Development (PMP):</strong> Guiding all projects with a PMP methodology, focusing on risk management, integrity, and long-term maintainability.
+                <strong>Process-Driven Development (PMP):</strong> Guiding all projects with a <i class="fas fa-project-diagram" style="color: #ffc107;"></i> PMP methodology, focusing on risk management, integrity, and long-term maintainability.
             </li>
             <li>
-                <strong>Bilingual UI/UX & Tooling:</strong> Creating simple, mobile-first interfaces and client tools that prioritize user comprehension and ease of use.
+                <strong>Bilingual UI/UX & Tooling:</strong> Creating simple, mobile-first interfaces that prioritize user comprehension and ease of use.
             </li>
             <li>
                 <strong>Mission-Driven Empowerment:</strong> Designing educational and functional tools to empower users, ensuring the solution is utilized effectively and adopted long-term.
@@ -212,99 +270,182 @@
         </ul>
     </section>
 
-    <hr>
-
+    <!-- 3. PROJECT CASE STUDIES -->
     <section id="projects">
         <div class="container">
             <h2>Featured Automation Case Studies (The Results)</h2>
 
+            <!-- PROJECT 1: WH SYSTEM -->
             <div class="case-study">
                 <h3>1. End-to-End Warehouse Documentation System</h3>
                 <div class="case-section">
                     <strong>The Business Challenge (Problem):</strong>
-                    Order processing took **4+ hours daily** and was prone to human errors in documentation (labels, invoices). The core bottleneck was manual order segregation and dispatch, hindering scalability.
+                    Order processing took **4+ hours daily** and was prone to human errors in documentation. This hindered scalability.
                 </div>
                 <div class="case-section">
                     <strong>The Solution (Process & Technology):</strong>
-                    A full-cycle, one-click system using **Google Apps Script** and custom logic. Features **Email Order Fetching**, automatic segregation, and a **One-Click Output Engine** to generate Thermal Labels, Invoices, and Packing Sheets instantly. Built for PMP-level control.
+                    A full-cycle, one-click system using **Google Apps Script** and custom logic. Features **Email Order Fetching**, automatic segregation, and a **One-Click Output Engine**.
+                    <div class="tech-icons">
+                        <i class="fab fa-google" title="Google Apps Script"></i>
+                        <i class="fab fa-js-square" title="JavaScript Logic"></i>
+                        <i class="fas fa-database" title="Google Sheets Data"></i>
+                    </div>
+                </div>
+                <div class="case-study-visual">
+                    <!-- PLACEHOLDER FOR VISUAL: Animated GIF/MP4 of one-click output -->
+                    <img src="assets/wh_system_automation_proof.gif" alt="Warehouse System Automation Output (GIF/Video)">
                 </div>
                 <div class="case-section">
                     <strong>Measurable Results (Impact):</strong>
-                    Reduced order processing time from 4 hours to **under 15 minutes (94% savings)**. Achieved **95%+ elimination of data entry errors**. Enabled the business to handle **3X the order volume** without increasing admin staff.
+                    Reduced order processing time from 4 hours to **under 15 minutes (94% savings)**. Achieved **95%+ elimination of data entry errors**. Enabled **3X order volume** capacity.
                 </div>
-                <a href="https://docs.google.com/spreadsheets/d/1fFstQ3d4r4HCv1KGCzoLjWhiuZZMQisxaD9OyMWfgXA/edit?usp=sharing" target="_blank" class="cta-button" style="margin-top: 20px;">View Source Code & Demo</a>
+                <a href="[LINK TO WH SYSTEM GITHUB REPO]" target="_blank" class="cta-button" style="margin-top: 20px;">View Source Code & Demo</a>
+                <a href="https://docs.google.com/spreadsheets/d/1fFstQ3d4r4HCv1KGCzoLjWhiuZZMQisxaD9OyMWfgXA/edit?usp=sharing" target="_blank" class="cta-button" style="margin-top: 20px; background-color: #28a745; margin-left: 10px;">View Live Data Structure</a>
             </div>
 
+            <!-- PROJECT 2: REPLENISHMENT TOOL -->
             <div class="case-study">
                 <h3>2. Predictive Stock Replenishment & Inventory Control Tool</h3>
                 <div class="case-section">
                     <strong>The Business Challenge (Problem):</strong>
-                    Frequent **stock-outs** and inconsistent, unknown **lead times** led to missed sales and slow customer delivery. Manual records caused constant inventory **discrepancies** and wasted time.
+                    Frequent **stock-outs** and inconsistent, unknown **lead times** led to missed sales and customer delays.
                 </div>
                 <div class="case-section">
                     <strong>The Solution (Process & Technology):</strong>
-                    A data-powered tool built with **Python** (CLI + GUI) that automates inventory health. Logic calculates the **Reorder Point (ROP)** by factoring in Lead Time and necessary **Buffer Stock** based on demand variability, providing proactive warnings.
+                    A data-powered tool built with **Python** (CLI + GUI) that automates inventory health. Logic calculates the **Reorder Point (ROP)** by factoring in Lead Time and necessary **Buffer Stock** based on demand variability.
+                    <div class="tech-icons">
+                        <i class="fab fa-python" title="Python"></i>
+                        <i class="fas fa-chart-line" title="Forecasting Logic"></i>
+                        <i class="fas fa-terminal" title="CLI/GUI Interface"></i>
+                    </div>
+                </div>
+                <div class="case-study-visual">
+                    <!-- PLACEHOLDER FOR VISUAL: Screenshot of Python GUI or CLI Output -->
+                    <img src="assets/replenish_tool_gui.jpg" alt="Python Stock Forecasting GUI Screenshot">
                 </div>
                 <div class="case-section">
                     <strong>Measurable Results (Impact):</strong>
-                    Provided a **Smart System** for **Peace of Mind**, eliminating reactive firefighting. Established clear, **data-backed lead times** for the first time, significantly reducing the frequency of stock-outs and protecting revenue.
+                    Provided a **Smart System** for **Peace of Mind**. Established clear, **data-backed lead times** and significantly reduced the frequency of stock-outs.
                 </div>
                 <a href="https://github.com/emadaed/smart-replenishment-tool" target="_blank" class="cta-button" style="margin-top: 20px;">View Source Code & Demo</a>
             </div>
 
+            <!-- PROJECT 3: INVOICE MAKER -->
             <div class="case-study">
                 <h3>3. Mobile-First, Bilingual Invoice & Quote Maker</h3>
                 <div class="case-section">
                     <strong>The Market Challenge (Problem):</strong>
-                    Freelancers and artisans lacked a **reliable, free, mobile-first** tool. They struggled with unprofessional billing methods, and invoices lacked features like **QR codes** and clean PDF outputs.
+                    Freelancers and artisans lacked a **reliable, free, mobile-first** tool. They struggled with unprofessional billing, lacking features like **QR codes** and clean PDF outputs.
                 </div>
                 <div class="case-section">
                     <strong>The Solution (Front-End & Feature Set):</strong>
-                    A **free, mobile-first web tool** (HTML/CSS/JS) tailored for micro-entrepreneurs. Features include **Bilingual Accessibility** (Urdu/English), **POS-Style PDF Generation**, live calculation of totals, and **QR code** integration.
+                    A **free, mobile-first web tool** using **HTML, CSS, and JS**. Features **Bilingual Accessibility** (Urdu/English), **POS-Style PDF Generation**, live calculation of totals, and **QR code** integration.
+                    <div class="tech-icons">
+                        <i class="fab fa-html5" style="color: orange;" title="HTML5"></i>
+                        <i class="fab fa-css3-alt" style="color: blue;" title="CSS3"></i>
+                        <i class="fab fa-js-square" style="color: gold;" title="JavaScript"></i>
+                        <i class="fas fa-mobile-alt" title="Mobile First Design"></i>
+                    </div>
+                </div>
+                <div class="case-study-visual" style="display: flex; gap: 20px;">
+                    <!-- PLACEHOLDER FOR VISUAL: Mobile Screenshot (48% width) -->
+                    <img src="assets/invoice_mobile_ui.jpg" alt="Invoice Maker Mobile UI Screenshot" style="width: 48%;">
+                    <!-- PLACEHOLDER FOR VISUAL: Final PDF Output (48% width) -->
+                    <img src="assets/invoice_pdf_output.jpg" alt="POS Style PDF Output Screenshot" style="width: 48%;">
                 </div>
                 <div class="case-section">
                     <strong>Measurable Results (Impact):</strong>
-                    Democratized access to professional billing, instantly elevating the professionalism of users. The scalable architecture is ready to be expanded into a premium service with advanced data integration.
+                    Democratized access to professional billing, instantly elevating the professionalism of users. The scalable architecture is ready for future premium expansion.
                 </div>
                 <a href="https://digiquote-toll.streamlit.app" target="_blank" class="cta-button" style="margin-top: 20px;">View Live Demo</a>
             </div>
-
         </div>
     </section>
 
+    <!-- 4. ABOUT ME & CREDENTIALS (REVISED DETAILED SECTION) -->
     <section id="about" class="container">
-        <h2>Mission & Philosophy</h2>
-        <p>
-            My work is driven by the principles of **Fruitfulness, Empathy, and Long-Term Results**. I approach every project with the goal of creating sustainable, maintainable solutions (adhering to my **PMP** commitment to process integrity). My passion extends to the community, where I focus on empowering youth through accessible **study material** and fun **educational games**, ensuring that technical solutions are utilized effectively and adopted long-term.
-        </p>
-        <p>
-            ***I believe the best code is the code that solves a real-world problem and is built to last.***
-        </p>
+        <h2>The Architect: Credentials, Process, and Mission</h2>
+        <p>I am Muhammad Ahmad. My approach to automation is guided by the principles of **Fruitfulness, Empathy, and Long-Term Results**, ensuring solutions are not just functional, but strategically sound and globally compliant.</p>
+        
+        <div style="text-align: left; max-width: 900px; margin: 0 auto; padding-top: 20px;">
+            <h3>Strategic Expertise (Why I'm Different)</h3>
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li><i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 10px;"></i> 
+                    <strong>MSc Supply Chain Operations Automation:</strong> My solutions are built on a foundation of academic expertise in logistics and process efficiency, ensuring maximum operational ROI.
+                </li>
+                <li><i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 10px;"></i> 
+                    <strong>PMP Certification (Active):</strong> All projects are executed with a rigorous project management methodology, guaranteeing timely delivery, clear communication, and defined scope.
+                </li>
+                <li><i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 10px;"></i> 
+                    <strong>Risk Management & OHS:</strong> I integrate Occupational Health & Safety and risk mitigation into automation design, providing stable and secure service delivery.
+                </li>
+                <li><i class="fas fa-check-circle" style="color: var(--primary-color); margin-right: 10px;"></i> 
+                    <strong>Process Improvement Focus:</strong> My goal is never just to code, but to optimize the existing process first, leading to robust, minimal-waste systems.
+                </li>
+            </ul>
+
+            <h3 style="margin-top: 30px;">Social Mission (Why I Build)</h3>
+            <p style="margin-top: 10px;">
+                My passion is empowering the next generation, shifting the current teacher/mentor regime mindset toward practical skill development. The focus is on making information accessible, turning knowledge into **Minimum Viable Products (MVPs)**, and teaching the power of **code or no-code** solutions.
+            </p>
+        </div>
     </section>
 
-    <hr>
+    <!-- 5. COMMUNITY & EMPOWERMENT -->
+    <section id="community" class="container">
+        <h2 style="margin-bottom: 30px;">Community & Empowerment: Educational Projects</h2>
+        <div style="display: flex; justify-content: center; gap: 40px;">
+            <div class="community-card" style="flex-basis: 45%;">
+                <i class="fas fa-gamepad" style="font-size: 3em; color: var(--primary-color);"></i>
+                <h3>Games for Educators</h3>
+                <p>Making learning fun and accessible by designing gamified experiences that educators can use to teach complex concepts and foster innovation.</p>
+                <a href="[LINK TO GAMES/EDUCATOR PROJECT]" class="cta-button" style="background-color: var(--success-color);">View Games Project</a>
+            </div>
 
+            <div class="community-card" style="flex-basis: 45%;">
+                <i class="fas fa-book-open" style="font-size: 3em; color: var(--primary-color);"></i>
+                <h3>Study Stuff Toolkit</h3>
+                <p>Creating accessible information toolkits to help less privileged youth comprehend knowledge and turn theoretical concepts into Minimum Viable Products (MVPs).</p>
+                <a href="[LINK TO STUDY STUFF PROJECT]" class="cta-button" style="background-color: var(--success-color);">Explore Study Tools</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. FOOTER & CONTACT -->
     <footer id="footer">
         <h3>Ready to Automate Your Operations?</h3>
         <p>Your business challenges require a strategic approach. Let's start with a quick conversation about your biggest bottleneck. I'm accessible everywhere—just reach out!</p>
+        
+        <!-- Primary Contact Links (Logos) -->
         <div class="contact-links">
-            <a href="mailto:muhammad.a.ahmed@gmail.com">Email</a> |
-            <a href="https://www.linkedin.com/in/muhammad-nazir-pe-pmp%C2%AE-itil%C2%AE-06a26832" target="_blank">LinkedIn</a> |
-            <a href="https://wa.me/923095222202?text=Hello,%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20discuss%20an%20automation%20project." target="_blank">WhatsApp</a>
+            <a href="mailto:muhammad.a.ahmed@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope"></i></a>
+            <a href="https://www.linkedin.com/in/muhammad-nazir-pe-pmp%C2%AE-itil%C2%AE-06a26832" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            <a href="https://wa.me/923095222202?text=Hello,%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20discuss%20an%20automation%20project." target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
         </div>
-        <p style="margin-top: 15px; font-size: 0.8em;">For community engagement and mentorship inquiries, find me on [Social Channel Name].</p>
+        
+        <!-- Social/Community Links (Logos) -->
+        <p style="margin-top: 20px; font-size: 0.9em;">For comments, mentorship, and community engagement, find me here:</p>
+        <div class="social-links">
+            <a href="https://www.facebook.com/SAADDAA/" target="_blank" title="Facebook"><i class="fab fa-facebook-square"></i></a>
+            <a href="https://twitter.com/lic09u" target="_blank" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+            <a href="https://github.com/emadaed" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+            <!-- Add YouTube/Other links as needed -->
+        </div>
+
         <p style="font-size: 0.7em; margin-top: 20px;">&copy; 2025 Muhammad Ahmad | TheOpsArchitect</p>
     </footer>
 
     <script>
-        // Simple JavaScript to show that the site is dynamic, e.g., smooth scroll to contact
-        document.querySelector('.cta-button').addEventListener('click', function(e) {
-            if(this.getAttribute('href').startsWith('#')) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            }
+        // Simple JavaScript for smooth scrolling
+        document.querySelectorAll('.cta-button, #footer a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                if (this.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
         });
     </script>
 </body>
