@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DigiSuite Python Learning Tabs</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+      color: #333;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: column;
+      max-width: 960px;
+      margin: 40px auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .tab-buttons {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+    }
+    .tab-buttons button {
+      flex: 1;
+      padding: 14px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .tab-buttons button:hover {
+      background: #f0f0f0;
+    }
+    .tab-buttons button.active {
+      background: #e0e0e0;
+      border-bottom: 3px solid #0078D7;
+    }
+    .tab-content {
+      padding: 20px;
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    h2 {
+      margin-top: 0;
+      color: #0078D7;
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+    .section p {
+      margin: 8px 0;
+    }
+    .highlight {
+      background: #eef;
+      padding: 10px;
+      border-left: 4px solid #0078D7;
+    }
+  </style>
+</head>
+<body>
+
+<div class="tabs">
+  <div class="tab-buttons">
+    <button class="active" onclick="showTab(0)">🧮 Operators</button>
+    <button onclick="showTab(1)">🔢 Precedence</button>
+    <button onclick="showTab(2)">🖨️ Print Formatting</button>
+    <button onclick="showTab(3)">🐍 About Python</button>
+  </div>
+
+  <div class="tab-content active">
+    <h2>Python Operators</h2>
+    <div class="section">
+      <p>Python supports several types of operators:</p>
+      <ul>
+        <li><strong>Arithmetic:</strong> +, -, *, /, %, **, //</li>
+        <li><strong>Comparison:</strong> ==, !=, >, <, >=, <=</li>
+        <li><strong>Logical:</strong> and, or, not</li>
+        <li><strong>Assignment:</strong> =, +=, -=, *=, etc.</li>
+        <li><strong>Bitwise:</strong> &, |, ^, ~, <<, >></li>
+        <li><strong>Membership:</strong> in, not in</li>
+        <li><strong>Identity:</strong> is, is not</li>
+      </ul>
+      <div class="highlight">
+        Example: <code>x = 5; y = 3; print(x ** y)</code> → Output: 125
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content">
+    <h2>Operator Precedence</h2>
+    <div class="section">
+      <p>Python evaluates expressions based on precedence:</p>
+      <ol>
+        <li>Parentheses <code>()</code></li>
+        <li>Exponentiation <code>**</code></li>
+        <li>Unary +, -</li>
+        <li>Multiplication, Division, Floor, Modulus</li>
+        <li>Addition, Subtraction</li>
+        <li>Comparisons</li>
+        <li>Logical NOT, AND, OR</li>
+      </ol>
+      <div class="highlight">
+        Example: <code>print(3 + 4 * 2)</code> → Output: 11 (not 14!)
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content">
+    <h2>Print Formatting</h2>
+    <div class="section">
+      <p>Python offers multiple ways to format output:</p>
+      <ul>
+        <li><code>print("Hello", name)</code></li>
+        <li><code>print(f"Hello {name}")</code> ← f-strings</li>
+        <li><code>"{:,.2f}".format(12345.678)</code> → 12,345.68</li>
+        <li><code>print("%s scored %d" % ("Ali", 95))</code></li>
+      </ul>
+      <div class="highlight">
+        Use f-strings for clean, readable formatting in modern Python.
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content">
+    <h2>About Python</h2>
+    <div class="section">
+      <p>Python is a high-level, versatile language used in:</p>
+      <ul>
+        <li>Web development (Django, Flask)</li>
+        <li>Data science (Pandas, NumPy, Scikit-learn)</li>
+        <li>Automation and scripting</li>
+        <li>AI/ML (TensorFlow, PyTorch)</li>
+      </ul>
+      <p><strong>Use Case:</strong> Instagram uses Python for backend services.</p>
+      <p><strong>Abilities:</strong> Easy syntax, vast libraries, cross-platform.</p>
+      <p><strong>Salary Range:</strong></p>
+      <ul>
+        <li>Pakistan: PKR 80K–300K/month</li>
+        <li>Gulf: SAR 8K–25K/month</li>
+        <li>US: $70K–150K/year</li>
+      </ul>
+      <div class="highlight">
+        Python empowers microbusinesses, startups, and global tech giants alike.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showTab(index) {
+    const tabs = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-buttons button');
+    tabs.forEach((tab, i) => {
+      tab.classList.toggle('active', i === index);
+      buttons[i].classList.toggle('active', i === index);
+    });
+  }
+</script>
+
+</body>
+</html>
