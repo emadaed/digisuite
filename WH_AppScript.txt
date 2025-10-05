@@ -1,0 +1,340 @@
+function onOpen() {
+  Logger.log('onOpen triggered at: ' + new Date().toLocaleString());
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log('Spreadsheet accessed: ' + ss.getName());
+  try {
+    var ui = SpreadsheetApp.getUi();
+    Logger.log('UI accessed successfully');
+    ui.createMenu('Processing Actions')
+      .addItem('1. Create Packing Slip', 'createPackingSlip')
+      .addItem('Transfer to WH Sheet', 'transferToWH')
+      .addItem('2. Create Proforma Invoice & Labels', 'createProformaInvoiceAndLabels')
+      .addToUi();
+    Logger.log('Custom menu added');
+  } catch (e) {
+    Logger.log('UI error: ' + e.message);
+  }
+  
+  // Create LOG sheet if not exists
+  if (!ss.getSheetByName('LOG')) {
+    Logger.log('Creating LOG sheet');
+    var logSheet = ss.insertSheet('LOG');
+    logSheet.getRange('A1:J1').setValues([['Date', 'Order ID', 'Product Code', 'Quantity', 'Site ID', 'Status', 'IMEI', 'Tracking No', 'Notes', 'Processed']]);
+    Logger.log('LOG sheet created');
+  }
+}
+
+function onEdit(e) {
+  var sheet = e.source.getActiveSheet();
+  if (sheet.getName() === 'Warehouse Sheet' && e.range.getColumn() === 10 && e.value === true) {
+    notifyStatus();
+  }
+}
+
+function logAction(orderId, action, message) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var logSheet = ss.getSheetByName('LOG');
+  logSheet.getRange(logSheet.getLastRow() + 1, 1).setValue(new Date().toLocaleString());
+  logSheet.getRange(logSheet.getLastRow(), 2).setValue(orderId);
+  logSheet.getRange(logSheet.getLastRow(), 10).setValue(action + ': ' + message);
+}
+
+function createPackingSlip() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var inputSheet = ss.getSheetByName('Input Sheet');
+    var processingSheet = ss.getSheetByName('Processing Sheet');
+    var whEmail = 'ma7512511@gmail.com';
+    
+    if (!inputSheet || !processingSheet) {
+      throw new Error('Input Sheet or Processing Sheet not found.');
+    }
+    
+    var data = inputSheet.getRange(2, 1, inputSheet.getLastRow() - 1, 7).getValues(); // A:G (G: checkbox)
+    var selectedData = data.filter(row => row[6] === true); // Checked rows
+    
+    if (selectedData.length === 0) {
+      throw new Error('No orders selected in Input Sheet column G.');
+    }
+    
+    // Transfer selected to Processing (A:E, 5 columns)
+    var transferData = selectedData.map(row => row.slice(0, 5));
+    var lastRowProcessing = processingSheet.getLastRow() > 0 ? processingSheet.getLastRow() : 1;
+    processingSheet.getRange(lastRowProcessing + 1, 1, selectedData.length, 5).setValues(transferData);
+    Logger.log(`Transferred ${selectedData.length} rows to Processing Sheet`);
+    
+    // Protect Input Sheet
+    var protection = inputSheet.protect().setDescription('Input Locked After Transfer');
+    protection.removeEditors(protection.getEditors());
+    
+    // Generate Packing Slip HTML for PDF
+    var totalQty = selectedData.reduce((sum, row) => sum + row[3], 0);
+    var packingHtml = `
+      <h2>Commercial Packing Slip</h2>
+      <p>Total Items: ${totalQty} | Shipment Date: ${new Date().toLocaleDateString()}</p>
+      <table border="1" style="border-collapse: collapse; width: 100%;">
+        <tr><th>Order ID</th><th>Product Code</th><th>Quantity</th><th>Site ID</th></tr>
+        ${selectedData.map(row => `<tr><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td></tr>`).join('')}
+      </table>
+      <p>Pack items per table. Update IMEI/Tracking in Warehouse Sheet.</p>
+    `;
+    
+    // Convert HTML to PDF
+    var packingPdfBlob = Utilities.newBlob(packingHtml, 'text/html').getAs('application/pdf').setName('Packing_Slip.pdf');
+    
+    // Send email with PDF attachment
+    MailApp.sendEmail({
+      to: whEmail,
+      subject: 'Packing Slip Generated - Selected Orders for WH Processing',
+      body: 'Attached Packing Slip PDF for printing. Update IMEI/Tracking in Warehouse Sheet.',
+      attachments: [packingPdfBlob]
+    });
+    
+    selectedData.forEach(row => logAction(row[1], 'Packing Slip', 'Success - Transferred to Processing'));
+    SpreadsheetApp.getUi().alert(`Success: ${selectedData.length} selected orders transferred to Processing Sheet! Click "Transfer to WH Sheet" to send to Warehouse.`);
+  } catch (error) {
+    logAction('N/A', 'Packing Slip', 'Failure - ' + error.message);
+    SpreadsheetApp.getUi().alert('Error: ' + error.message);
+  }
+}
+
+function transferToWH() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    Logger.log(`Spreadsheet URL: ${ss.getUrl()}`);
+    var processingSheet = ss.getSheetByName('Processing Sheet');
+    var warehouseSheet = ss.getSheetByName('Warehouse Sheet');
+    
+    // Validate sheet existence
+    if (!processingSheet) {
+      throw new Error('Processing Sheet not found. Ensure it exists and is named exactly "Processing Sheet".');
+    }
+    if (!warehouseSheet) {
+      throw new Error('Warehouse Sheet not found. Ensure it exists and is named exactly "Warehouse Sheet".');
+    }
+    Logger.log(`Processing Sheet ID: ${processingSheet.getSheetId()}, Warehouse Sheet ID: ${warehouseSheet.getSheetId()}`);
+    
+    // Remove sheet protection
+    var protections = warehouseSheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+    if (protections.length > 0) {
+      protections.forEach(protection => protection.remove());
+      Logger.log('Removed protection from Warehouse Sheet');
+    }
+    
+    // Clear filters and unhide rows/columns
+    if (warehouseSheet.getFilter()) {
+      warehouseSheet.getFilter().remove();
+      Logger.log('Removed filter from Warehouse Sheet');
+    }
+    warehouseSheet.showRows(1, warehouseSheet.getMaxRows());
+    warehouseSheet.showColumns(1, warehouseSheet.getMaxColumns());
+    Logger.log('Unhid all rows and columns in Warehouse Sheet');
+    
+    // Clear only A:E below header (row 1) to preserve dropdown in F and checkbox in J
+    var maxRows = warehouseSheet.getMaxRows();
+    if (maxRows > 1) {
+      warehouseSheet.getRange(2, 1, maxRows - 1, 5).clear({ contentsOnly: true, formatOnly: true });
+      Logger.log('Cleared content and formatting in Warehouse Sheet A:E below row 1');
+    }
+    
+    // Get data from Processing Sheet (A:E, 5 columns)
+    var lastRow = processingSheet.getLastRow();
+    Logger.log(`Processing Sheet last row: ${lastRow}`);
+    if (lastRow < 2) {
+      throw new Error('No data in Processing Sheet (no rows beyond header). Run "Create Packing Slip" first.');
+    }
+    
+    var data = processingSheet.getRange(2, 1, lastRow - 1, 5).getValues(); // A:E
+    Logger.log(`Data retrieved from Processing Sheet (rows: ${data.length}): ${JSON.stringify(data)}`);
+    
+    // Validate data
+    data = data.filter(row => row.some(cell => cell !== '' && cell !== null));
+    Logger.log(`Filtered non-empty rows: ${data.length}`);
+    if (data.length === 0) {
+      throw new Error('No valid data in Processing Sheet (all rows are empty or null).');
+    }
+    
+    // Log sample data
+    Logger.log(`First row of data: ${JSON.stringify(data[0])}`);
+    if (data.length > 1) Logger.log(`Second row of data: ${JSON.stringify(data[1])}`);
+    
+    // Transfer to Warehouse Sheet (A:E, starting at A2)
+    var targetRow = 2; // Always start at row 2
+    var targetRange = `A${targetRow}:E${targetRow + data.length - 1}`;
+    Logger.log(`Writing ${data.length} rows to Warehouse Sheet at range: ${targetRange}`);
+    warehouseSheet.getRange(targetRow, 1, data.length, 5).setValues(data);
+    SpreadsheetApp.flush(); // Ensure write is committed
+    Utilities.sleep(1000); // Brief delay to ensure write completes
+    Logger.log(`Attempted to transfer ${data.length} rows to Warehouse Sheet at ${targetRange}`);
+    
+    // Verify data was written
+    var writtenData = warehouseSheet.getRange(targetRow, 1, data.length, 5).getValues();
+    Logger.log(`Data written to Warehouse Sheet: ${JSON.stringify(writtenData)}`);
+    
+    // Compare written data to original, converting to strings to avoid type mismatches
+    var dataMatches = data.every((row, i) => row.every((cell, j) => String(cell) === String(writtenData[i][j])));
+    if (!dataMatches) {
+      // Log detailed mismatch for debugging
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < 5; j++) {
+          if (String(data[i][j]) !== String(writtenData[i][j])) {
+            Logger.log(`Mismatch at row ${i + targetRow}, column ${j + 1}: Input=${JSON.stringify(data[i][j])}, Written=${JSON.stringify(writtenData[i][j])}`);
+          }
+        }
+      }
+      throw new Error('Data verification failed: Written data does not match input data. Check logs for details.');
+    }
+    
+    // Log success
+    var orderId = data[0][1] || 'N/A';
+    logAction(orderId, 'Transfer to WH', `Success - Transferred ${data.length} rows to Warehouse Sheet at ${targetRange}`);
+    SpreadsheetApp.getUi().alert(`Success: Transferred ${data.length} rows to Warehouse Sheet at ${targetRange} for WH to scan IMEI!`);
+  } catch (error) {
+    Logger.log(`Transfer to WH error: ${error.message}`);
+    logAction('N/A', 'Transfer to WH', `Failure - ${error.message}`);
+    SpreadsheetApp.getUi().alert(`Error: ${error.message}`);
+  }
+}
+
+function createProformaInvoiceAndLabels() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var processingSheet = ss.getSheetByName('Processing Sheet');
+    var whEmail = 'ma7512511@gmail.com';
+    
+    if (!processingSheet) {
+      throw new Error('Processing Sheet not found.');
+    }
+    
+    var numRows = processingSheet.getLastRow() - 1;
+    if (numRows < 1) {
+      throw new Error('No data in Processing Sheet.');
+    }
+    var data = processingSheet.getRange(2, 1, numRows, 9).getValues();
+    var hasIMEI = data.some(row => row[6] !== '');
+    var hasTracking = data.some(row => row[8] !== '');
+    if (!hasIMEI || !hasTracking) {
+      throw new Error('IMEI and Tracking No must be updated in Warehouse Sheet first!');
+    }
+    
+    // Proforma Invoice HTML for PDF
+    var totalQty = data.reduce((sum, row) => sum + row[3], 0);
+    var invoiceHtml = `
+      <h2>Proforma Invoice</h2>
+      <p>Invoice No: INV-${new Date().getFullYear()}${data[0][1]} | Date: ${new Date().toLocaleDateString()}</p>
+      <p>Total Quantity: ${totalQty} | Terms: Payment on delivery</p>
+      <table border="1" style="border-collapse: collapse; width: 100%;">
+        <tr><th>Order ID</th><th>Product Code</th><th>Quantity</th><th>Site ID</th><th>IMEI</th><th>Tracking No</th></tr>
+        ${data.map(row => `<tr><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td><td>${row[4]}</td><td>${row[6]}</td><td>${row[8]}</td></tr>`).join('')}
+      </table>
+      <p>Commercial terms: FOB Lahore. Attach to shipment.</p>
+    `;
+    
+    // Convert HTML to PDF
+    var invoicePdfBlob = Utilities.newBlob(invoiceHtml, 'text/html').getAs('application/pdf').setName('Proforma_Invoice.pdf');
+    
+    // ZPL for Labels with barcode
+    var zpl = '';
+    for (var i = 0; i < data.length; i++) {
+      zpl += `^XA
+^FO100,100^A0N,50,50^FDOrder ID: ${data[i][1]}^FS
+^FO100,150^A0N,50,50^FDProduct: ${data[i][2]}^FS
+^FO100,200^A0N,50,50^FDQty: ${data[i][3]}^FS
+^FO100,250^A0N,50,50^FDSite: ${data[i][4]}^FS
+^FO100,300^A0N,50,50^FDIMEI: ${data[i][6]}^FS
+^FO100,350^BY3^BCN,100,Y,N,N^FD${data[i][8]}^FS
+^XZ
+`;
+    }
+    var zplBlob = Utilities.newBlob(zpl, 'text/plain', 'Labels.zpl');
+    
+    // CSV for Invoice
+    var csvContent = 'Order ID,Product Code,Quantity,Site ID,IMEI,Tracking No\n' + data.map(row => `${row[1]},${row[2]},${row[3]},${row[4]},${row[6]},${row[8]}`).join('\n');
+    var csvBlob = Utilities.newBlob(csvContent, 'text/csv', 'Proforma_Invoice.csv');
+    
+    // CSV for Labels
+    var csvContentLabel = 'Order ID,Product Code,Quantity,Site ID,IMEI,Tracking No\n' + data.map(row => `${row[1]},${row[2]},${row[3]},${row[4]},${row[6]},${row[8]}`).join('\n');
+    var csvBlobLabel = Utilities.newBlob(csvContentLabel, 'text/csv', 'Labels.csv');
+    
+    // Send email with PDF and CSVs
+    MailApp.sendEmail({
+      to: whEmail,
+      subject: 'Proforma Invoice & Labels Generated - IMEI & Tracking Included',
+      body: 'Attached: Proforma Invoice PDF, Labels ZPL (for printer), and CSVs for audit.',
+      htmlBody: invoiceHtml,
+      attachments: [invoicePdfBlob, zplBlob, csvBlob, csvBlobLabel]
+    });
+    
+    data.forEach(row => logAction(row[1], 'Invoice & Labels', 'Success - Generated with IMEI/Tracking'));
+    SpreadsheetApp.getUi().alert('Invoice & Labels sent to WH with PDF, ZPL, and CSVs!');
+  } catch (error) {
+    logAction('N/A', 'Invoice & Labels', 'Failure - ' + error.message);
+    SpreadsheetApp.getUi().alert('Error: ' + error.message);
+  }
+}
+
+function notifyStatus() {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var warehouseSheet = ss.getSheetByName('Warehouse Sheet');
+    var processedSheet = ss.getSheetByName('Processed Orders');
+    var imeiSheet = ss.getSheetByName('IMEI Report');
+    var inputSheet = ss.getSheetByName('Input Sheet');
+    var whEmail = 'ma7512511@gmail.com';
+    
+    if (!warehouseSheet || !processedSheet || !imeiSheet || !inputSheet) {
+      throw new Error('One or more required sheets not found.');
+    }
+    
+    var data = warehouseSheet.getDataRange().getValues();
+    var processedRows = [];
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][9] === true && data[i][5] === 'Processed') { // J: Checked, F: "Processed"
+        processedRows.push(data[i]);
+      }
+    }
+    
+    if (processedRows.length === 0) {
+      throw new Error('No orders with Status "Processed" and J checked.');
+    }
+    
+    // Move to Processed Orders (A-J)
+    processedSheet.getRange(processedSheet.getLastRow() + 1, 1, processedRows.length, 10).setValues(processedRows);
+    
+    // Generate IMEI Report (IMEI, Order ID, Product Code, Site ID, Date Processed, Tracking No)
+    for (var k = 0; k < processedRows.length; k++) {
+      imeiSheet.getRange(imeiSheet.getLastRow() + 1, 1, 1, 6).setValues([[processedRows[k][6], processedRows[k][1], processedRows[k][2], processedRows[k][4], new Date(), processedRows[k][7]]]);
+    }
+    
+    // Send IMEI Report email
+    MailApp.sendEmail({
+      to: whEmail,
+      subject: 'IMEI Report Generated - Process Complete',
+      body: 'IMEI Report generated for processed orders. See IMEI Report sheet.'
+    });
+    
+    // Remove from Input (match by Order ID)
+    var inputData = inputSheet.getDataRange().getValues();
+    for (var p = 0; p < processedRows.length; p++) {
+      for (var q = inputData.length - 1; q > 0; q--) {
+        if (inputData[q][1] === processedRows[p][1]) {
+          inputSheet.deleteRow(q + 1);
+          break; // Exit inner loop after deletion
+        }
+      }
+    }
+    
+    // Clear processed rows from Warehouse
+    for (var m = data.length - 1; m > 0; m--) {
+      if (data[m][9] === true && data[m][5] === 'Processed') {
+        warehouseSheet.deleteRow(m + 1);
+      }
+    }
+    
+    processedRows.forEach(row => logAction(row[1], 'Notify Status', 'Success - Transferred to Processed Orders, IMEI Report generated'));
+    SpreadsheetApp.getUi().alert('Process complete! Data moved to Processed Orders, IMEI Report generated and emailed, rows removed from Input/Warehouse.');
+  } catch (error) {
+    logAction('N/A', 'Notify Status', 'Failure - ' + error.message);
+    SpreadsheetApp.getUi().alert('Error: ' + error.message);
+  }
+}
