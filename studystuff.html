@@ -85,20 +85,20 @@
   <div class="tab-content active">
     <h2>Operators in Python</h2>
     <div class="section">
-      <p>Python offers a wide range of operators, each serving a specific purpose:</p>
+      <p>Python supports several categories of operators:</p>
       <ul>
         <li><strong>Arithmetic:</strong> +, -, *, /, %, **, //</li>
         <li><strong>Comparison:</strong> ==, !=, >, <, >=, <=</li>
         <li><strong>Logical:</strong> and, or, not</li>
-        <li><strong>Assignment:</strong> =, +=, -=, *=, etc.</li>
+        <li><strong>Assignment:</strong> =, +=, -=, *=, /=, %=</li>
         <li><strong>Bitwise:</strong> &, |, ^, ~, <<, >></li>
         <li><strong>Membership:</strong> in, not in</li>
         <li><strong>Identity:</strong> is, is not</li>
       </ul>
       <div class="highlight">
-        Example: <code>x = 5; y = 3; print(x ** y)</code> → Output: 125
+        Example: <code>x = 10; y = 3; print(x // y)</code> → Output: 3
       </div>
-      <p>These operators are foundational for building logic, calculations, and control flows in any Python application—from microbusiness dashboards to AI models.</p>
+      <p>These operators are essential for building logic in applications like billing systems, inventory management, and data analysis tools.</p>
     </div>
   </div>
 
@@ -106,7 +106,7 @@
   <div class="tab-content">
     <h2>Operator Precedence</h2>
     <div class="section">
-      <p>Python evaluates expressions based on a strict hierarchy:</p>
+      <p>Python evaluates expressions based on precedence rules:</p>
       <ol>
         <li>Parentheses <code>()</code></li>
         <li>Exponentiation <code>**</code></li>
@@ -117,9 +117,9 @@
         <li>Logical NOT, AND, OR</li>
       </ol>
       <div class="highlight">
-        Example: <code>print(3 + 4 * 2)</code> → Output: 11 (not 14!)
+        Example: <code>print(2 + 3 * 4)</code> → Output: 14
       </div>
-      <p>Understanding precedence is crucial for writing predictable, bug-free code—especially in financial calculations or inventory logic.</p>
+      <p>Understanding precedence helps avoid logic errors in financial calculations, conditional flows, and automation scripts.</p>
     </div>
   </div>
 
@@ -127,7 +127,7 @@
   <div class="tab-content">
     <h2>Print Formatting</h2>
     <div class="section">
-      <p>Python supports multiple formatting styles:</p>
+      <p>Python offers multiple formatting styles:</p>
       <ul>
         <li><strong>Concatenation:</strong> <code>print("Hello", name)</code></li>
         <li><strong>f-Strings:</strong> <code>print(f"Hello {name}")</code></li>
@@ -194,4 +194,8 @@
     <h2>Python Exercises</h2>
     <ul>
       <li>Write a program to calculate the area of a circle.</li>
-      <li>Create a dictionary of student
+      <li>Create a dictionary of student names and scores, then print the highest scorer.</li>
+      <li>Write a loop that prints numbers from 1 to 100, skipping multiples of 5.</li>
+      <li>Build a simple calculator using if-else statements.</li>
+      <li>Write a function that checks if a string is a palindrome.</li>
+      <li>Simulate a login system with username/password validation.</li>
