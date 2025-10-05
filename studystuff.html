@@ -12,8 +12,6 @@
       color: #333;
     }
     .tabs {
-      display: flex;
-      flex-direction: column;
       max-width: 960px;
       margin: 40px auto;
       background: #fff;
@@ -22,6 +20,7 @@
     }
     .tab-buttons {
       display: flex;
+      flex-wrap: wrap;
       border-bottom: 1px solid #ddd;
     }
     .tab-buttons button {
@@ -54,13 +53,19 @@
     .section {
       margin-bottom: 20px;
     }
-    .section p {
-      margin: 8px 0;
-    }
     .highlight {
       background: #eef;
       padding: 10px;
       border-left: 4px solid #0078D7;
+      margin: 10px 0;
+    }
+    select {
+      padding: 8px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    ul, ol {
+      margin-left: 20px;
     }
   </style>
 </head>
@@ -72,12 +77,15 @@
     <button onclick="showTab(1)">🔢 Precedence</button>
     <button onclick="showTab(2)">🖨️ Print Formatting</button>
     <button onclick="showTab(3)">🐍 About Python</button>
+    <button onclick="showTab(4)">🧠 Topic Quiz</button>
+    <button onclick="showTab(5)">🧪 Exercises</button>
   </div>
 
+  <!-- Operators Tab -->
   <div class="tab-content active">
-    <h2>Python Operators</h2>
+    <h2>Operators in Python</h2>
     <div class="section">
-      <p>Python supports several types of operators:</p>
+      <p>Python offers a wide range of operators, each serving a specific purpose:</p>
       <ul>
         <li><strong>Arithmetic:</strong> +, -, *, /, %, **, //</li>
         <li><strong>Comparison:</strong> ==, !=, >, <, >=, <=</li>
@@ -90,13 +98,15 @@
       <div class="highlight">
         Example: <code>x = 5; y = 3; print(x ** y)</code> → Output: 125
       </div>
+      <p>These operators are foundational for building logic, calculations, and control flows in any Python application—from microbusiness dashboards to AI models.</p>
     </div>
   </div>
 
+  <!-- Precedence Tab -->
   <div class="tab-content">
     <h2>Operator Precedence</h2>
     <div class="section">
-      <p>Python evaluates expressions based on precedence:</p>
+      <p>Python evaluates expressions based on a strict hierarchy:</p>
       <ol>
         <li>Parentheses <code>()</code></li>
         <li>Exponentiation <code>**</code></li>
@@ -109,25 +119,29 @@
       <div class="highlight">
         Example: <code>print(3 + 4 * 2)</code> → Output: 11 (not 14!)
       </div>
+      <p>Understanding precedence is crucial for writing predictable, bug-free code—especially in financial calculations or inventory logic.</p>
     </div>
   </div>
 
+  <!-- Print Formatting Tab -->
   <div class="tab-content">
     <h2>Print Formatting</h2>
     <div class="section">
-      <p>Python offers multiple ways to format output:</p>
+      <p>Python supports multiple formatting styles:</p>
       <ul>
-        <li><code>print("Hello", name)</code></li>
-        <li><code>print(f"Hello {name}")</code> ← f-strings</li>
-        <li><code>"{:,.2f}".format(12345.678)</code> → 12,345.68</li>
-        <li><code>print("%s scored %d" % ("Ali", 95))</code></li>
+        <li><strong>Concatenation:</strong> <code>print("Hello", name)</code></li>
+        <li><strong>f-Strings:</strong> <code>print(f"Hello {name}")</code></li>
+        <li><strong>Format Method:</strong> <code>"{:,.2f}".format(12345.678)</code></li>
+        <li><strong>Percent Style:</strong> <code>"%s scored %d" % ("Ali", 95)</code></li>
       </ul>
       <div class="highlight">
-        Use f-strings for clean, readable formatting in modern Python.
+        Example: <code>print(f"Total: PKR {amount:,.0f}")</code> → Output: Total: PKR 125,000
       </div>
+      <p>Used in dashboards, receipts, logs, and user interfaces—print formatting ensures clarity and professionalism.</p>
     </div>
   </div>
 
+  <!-- About Python Tab -->
   <div class="tab-content">
     <h2>About Python</h2>
     <div class="section">
@@ -138,31 +152,46 @@
         <li>Automation and scripting</li>
         <li>AI/ML (TensorFlow, PyTorch)</li>
       </ul>
-      <p><strong>Use Case:</strong> Instagram uses Python for backend services.</p>
-      <p><strong>Abilities:</strong> Easy syntax, vast libraries, cross-platform.</p>
+      <p><strong>Use Case:</strong> Instagram uses Python for backend services. Spotify uses it for data pipelines. DigiSuite uses it for microbusiness empowerment.</p>
+      <p><strong>Abilities:</strong> Easy syntax, vast libraries, cross-platform, strong community.</p>
       <p><strong>Salary Range:</strong></p>
       <ul>
-        <li>Pakistan: PKR 80K–300K/month</li>
-        <li>Gulf: SAR 8K–25K/month</li>
-        <li>US: $70K–150K/year</li>
+        <li><strong>Pakistan:</strong> PKR 80K–300K/month</li>
+        <li><strong>Gulf:</strong> SAR 8K–25K/month</li>
+        <li><strong>US:</strong> $70K–150K/year</li>
       </ul>
       <div class="highlight">
-        Python empowers microbusinesses, startups, and global tech giants alike.
+        Python bridges global tech and local impact—ideal for startups, freelancers, and educators.
       </div>
     </div>
   </div>
-</div>
 
-<script>
-  function showTab(index) {
-    const tabs = document.querySelectorAll('.tab-content');
-    const buttons = document.querySelectorAll('.tab-buttons button');
-    tabs.forEach((tab, i) => {
-      tab.classList.toggle('active', i === index);
-      buttons[i].classList.toggle('active', i === index);
-    });
-  }
-</script>
+  <!-- Quiz Tab -->
+  <div class="tab-content">
+    <h2>Topic-Wise Quiz</h2>
+    <p>Select a topic to begin:</p>
+    <select onchange="alert('Quiz for ' + this.value + ' will be loaded here.')">
+      <option disabled selected>Choose a topic</option>
+      <option>Print</option>
+      <option>Variable</option>
+      <option>Data Types</option>
+      <option>String</option>
+      <option>Integer</option>
+      <option>List</option>
+      <option>Dictionary</option>
+      <option>Tuple</option>
+      <option>If</option>
+      <option>Else / Elif</option>
+      <option>For Loop</option>
+      <option>While Loop</option>
+      <option>While True</option>
+    </select>
+    <p style="margin-top:10px;">(Quiz logic can be embedded here or linked to external modules.)</p>
+  </div>
 
-</body>
-</html>
+  <!-- Exercises Tab -->
+  <div class="tab-content">
+    <h2>Python Exercises</h2>
+    <ul>
+      <li>Write a program to calculate the area of a circle.</li>
+      <li>Create a dictionary of student
