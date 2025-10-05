@@ -199,3 +199,19 @@
       <li>Build a simple calculator using if-else statements.</li>
       <li>Write a function that checks if a string is a palindrome.</li>
       <li>Simulate a login system with username/password validation.</li>
+      <script>
+  function showTab(index) {
+    const tabs = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-buttons button');
+    tabs.forEach((tab, i) => {
+      tab.style.display = i === index ? 'block' : 'none';
+      buttons[i].classList.toggle('active', i === index);
+    });
+  }
+
+  // Initialize: show first tab on load
+  document.addEventListener('DOMContentLoaded', () => {
+    showTab(0);
+  });
+</script>
+
