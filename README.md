@@ -87,11 +87,11 @@ Muhammad Ahmad
 AI Engineer & Founder — Learn With Misham
 Co-Founder of Jugnu Social Welfare Organization
 
-🌐 Website
+🌐 Website www.jugnu.org
 
-🐙 GitHub
+🐙 GitHub https://emadaed.github.io/digisuite/
 
-📧 Email
+📧 Email muhammad.a.ahmed@gmail.com
 
 📘 LinkedIn
  https://www.linkedin.com/in/muhammad-nazir-pe-pmp%C2%AE-itil%C2%AE-06a26832
