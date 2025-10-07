@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muhammad Ahmad | PMP, MSc Architect & Digital Transformation Expert</title>
+
+    <!-- Primary SEO -->
+    <meta name="description" content="Muhammad Ahmad: MSc Supply Chain & PMP-certified Operations Automation Architect. Specializing in Python, Google Apps Script, and creating empathy-driven, long-term optimization solutions.">
+    <meta name="keywords" content="Automation, PMP, Supply Chain, Python, Google Apps Script, Freelancer, Digital Transformation">
+    <link rel="canonical" href="https://emadaed.github.io/digisuite/">
+
+    <!-- Open Graph (for link previews) -->
+    <meta property="og:title" content="Muhammad Ahmad | Automation Architect - DigiSuite">
+    <meta property="og:description" content="MSc Supply Chain & PMP-certified Architect building scalable, empathy-driven automation tools (Python, Google Apps Script, n8n).">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://emadaed.github.io/digisuite/">
+    <meta property="og:image" content="assets/preview-social.png">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Muhammad Ahmad | DigiSuite">
+    <meta name="twitter:description" content="Automation Architect — PMP, MSc. Tools: Python, Google Apps Script, n8n.">
+    <meta name="twitter:image" content="assets/preview-social.png">
+
+    <!-- Favicon (placeholder - replace with your logo file) -->
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+
+    <!-- Load Tailwind CSS CDN (deferred config) -->
+    <script>
+      window.tailwind = true;
+    </script>
+    <script src="https://cdn.tailwindcss.com" defer></script>
+
+    <!-- Load Font Awesome for Icons (deferred) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+    <!-- Google Fonts (preconnect + preload best practices) -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- AOS for scroll animations (deferred init) -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+    <style>
+        :root {
+            --primary-color: #007bff; /* Blue */
+            --secondary-color: #f0f4f8; /* Light Blue Gray */
+            --accent-color: #28a745; /* Green */
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1f2937;
+            background-color: #ffffff;
+        }
+        h1,h2,h3 { font-family: 'Poppins', sans-serif; }
+        /* subtle accessible focus outline */
+        :focus { outline: 3px solid rgba(37,99,235,0.18); outline-offset: 2px; }
+        /* custom scrollbar style */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: var(--secondary-color); }
+        /* small helper for nav offset when linking */
+        section { scroll-margin-top: 80px; }
+    </style>
+
+</head>
+
+<body class="antialiased">
+
+    <!-- FIXED NAVIGATION BAR -->
+    <nav class="sticky top-0 z-50 bg-white shadow-md" aria-label="Primary Navigation">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+            <a href="#hero" class="text-xl font-extrabold tracking-tight" style="font-family: 'Poppins', sans-serif;" aria-label="DigiSuite - Home">TheOpsArchitect</a>
+            <div class="flex space-x-6 text-sm font-medium" role="navigation">
+                <a href="#about" class="hover:text-blue-600 transition duration-300 hidden sm:block" aria-label="About">About</a>
+                <a href="#services" class="hover:text-blue-600 transition duration-300 hidden sm:block" aria-label="Services">Services</a>
+                <a href="#projects" class="hover:text-blue-600 transition duration-300 hidden sm:block" aria-label="Projects">Projects</a>
+                <a href="#community" class="hover:text-blue-600 transition duration-300 hidden sm:block" aria-label="Community">Community</a>
+                <a href="#footer" class="text-white bg-blue-600 px-3 py-1 rounded-full hover:bg-blue-700 transition duration-300" aria-label="Contact">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 1. HERO SECTION -->
+    <section id="hero" class="bg-gray-50 py-20 sm:py-32 text-center" style="background-color: var(--secondary-color);" data-aos="fade-in">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl sm:text-6xl font-extrabold mb-3" style="font-family: 'Poppins', sans-serif;">Muhammad Ahmad</h1>
+            <p class="text-xl sm:text-2xl font-semibold text-blue-700 mb-6">
+                Automation Architect | MSc Supply Chain & PMP-Certified Expert
+            </p>
+            <p class="text-lg max-w-3xl mx-auto text-gray-600 mb-10">
+                Building scalable, empathy-driven automation tools that optimize client operations, guaranteeing integrity and bottom-line growth.
+            </p>
+            <a href="#footer" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105" style="letter-spacing: 1.5px;" aria-label="Book a Free Consultation">
+                Book a Free Consultation <i class="fas fa-arrow-right ml-2" aria-hidden="true"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- 2. CORE SERVICES -->
+    <section id="services" class="py-16 sm:py-24" data-aos="fade-up">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-12" style="font-family: 'Poppins', sans-serif;">What I Do: Core Services</h2>
+            <ul class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="list">
+                <!-- Service 1 -->
+                <li class="bg-white p-6 rounded-xl shadow-xl border-t-4 border-blue-600 hover:shadow-2xl transition duration-300" data-aos="zoom-in" data-aos-delay="100">
+                    <i class="fas fa-cogs text-3xl text-blue-600 mb-3" aria-hidden="true"></i>
+                    <strong class="text-xl block mb-2 text-blue-800">Supply Chain & Process Optimization</strong>
+                    <p class="text-gray-600">Leveraging MSc knowledge to analyze existing workflows, identify bottlenecks, and implement efficiency best practices for maximum operational ROI.</p>
+                </li>
+                <!-- Service 2 -->
+                <li class="bg-white p-6 rounded-xl shadow-xl border-t-4 border-blue-600 hover:shadow-2xl transition duration-300" data-aos="zoom-in" data-aos-delay="200">
+                    <i class="fab fa-python text-3xl text-blue-600 mb-3" aria-hidden="true"></i>
+                    <strong class="text-xl block mb-2 text-blue-800">Full-Stack Automation</strong>
+                    <p class="text-gray-600">Developing robust, customized tools using Python and JavaScript for end-to-end automation, from data intake to documentation.</p>
+                </li>
+                <!-- Service 3 -->
+                <li class="bg-white p-6 rounded-xl shadow-xl border-t-4 border-blue-600 hover:shadow-2xl transition duration-300" data-aos="zoom-in" data-aos-delay="300">
+                    <i class="fas fa-chart-line text-3xl text-blue-600 mb-3" aria-hidden="true"></i>
+                    <strong class="text-xl block mb-2 text-blue-800">Data Modeling & Forecasting</strong>
+                    <p class="text-gray-600">Building predictive Python tools, such as stock replenishment systems, to ensure inventory control and flag critical risk factors like stock-outs.</p>
+                </li>
+                <!-- Service 4 -->
+                <li class="bg-white p-6 rounded-xl shadow-xl border-t-4 border-blue-600 hover:shadow-2xl transition duration-300" data-aos="zoom-in" data-aos-delay="400">
+                    <i class="fas fa-project-diagram text-3xl text-blue-600 mb-3" aria-hidden="true"></i>
+                    <strong class="text-xl block mb-2 text-blue-800">PMP-Driven Development</strong>
+                    <p class="text-gray-600">Guiding all projects with a rigorous PMP methodology, focusing on risk management, clear communication, and long-term system maintainability.</p>
+                </li>
+                <!-- Service 5 -->
+                <li class="bg-white p-6 rounded-xl shadow-xl border-t-4 border-blue-600 hover:shadow-2xl transition duration-300" data-aos="zoom-in" data-aos-delay="500">
+                    <i class="fas fa-mobile-alt text-3xl text-blue-600 mb-3" aria-hidden="true"></i>
+                    <strong class="text-xl block mb-2 text-blue-800">Bilingual UI/UX & Tooling</strong>
+                    <p class="text-gray-600">Creating simple, mobile-first interfaces that prioritize user comprehension and ease of use, including bilingual features (Urdu/English).</p>
+                </li>
+                <!-- Service 6 -->
+                <li class="bg-white p-6 rounded-xl shadow-xl border-t-4 border-blue-600 hover:shadow-2xl transition duration-300" data-aos="zoom-in" data-aos-delay="600">
+                    <i class="fas fa-handshake text-3xl text-blue-600 mb-3" aria-hidden="true"></i>
+                    <strong class="text-xl block mb-2 text-blue-800">Mission-Driven Empowerment</strong>
+                    <p class="text-gray-600">Designing educational and functional tools to empower users, ensuring solutions are effectively utilized, adopted long-term, and foster capability.</p>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 3. PROJECT CASE STUDIES -->
+    <section id="projects" class="bg-gray-50 py-16 sm:py-24" style="background-color: var(--secondary-color);">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-12 text-center" style="font-family: 'Poppins', sans-serif;" data-aos="fade-up">Featured Automation Case Studies</h2>
+
+            <!-- PROJECT 1: WH SYSTEM -->
+            <div class="case-study bg-white p-8 rounded-xl shadow-2xl mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8" data-aos="fade-right">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 border-l-4 border-blue-600 pl-3">1. End-to-End Warehouse Documentation System</h3>
+                    <div class="space-y-4 text-gray-700">
+                        <p><strong>The Challenge:</strong> Order processing took **4+ hours daily** and was prone to human errors, severely limiting scalability.</p>
+                        <p><strong>The Solution:</strong> A full-cycle, one-click system using **Google Apps Script** (JS). Features **Email Order Fetching**, automatic segregation, and a **One-Click Output Engine**.</p>
+                        <div class="flex items-center gap-4 text-2xl mt-4" aria-hidden="true">
+                            <span class="text-sm font-bold text-gray-500">Tech Stack:</span>
+                            <i class="fab fa-google text-yellow-500" title="Google Apps Script"></i>
+                            <i class="fab fa-js-square text-yellow-600" title="JavaScript Logic"></i>
+                            <i class="fas fa-database text-gray-500" title="Google Sheets Data"></i>
+                            <i class="fas fa-rocket text-blue-500" title="Automation"></i>
+                        </div>
+                        <p class="text-lg font-bold text-blue-600 pt-3">Measurable Results:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-4">
+                            <li>Time reduced from 4 hours to **under 15 minutes (94% savings)**.</li>
+                            <li>Achieved **95%+ elimination of data entry errors**.</li>
+                            <li>Enabled **3X order volume** capacity.</li>
+                        </ul>
+                    </div>
+                    <div class="mt-6 flex space-x-3">
+                        <a href="https://emadaed.github.io/digisuite/WH_AppScript.txt" target="_blank" rel="noopener noreferrer" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300" aria-label="View Warehouse System Source">View Source Code & Demo</a>
+                        <a href="https://docs.google.com/spreadsheets/d/1fFstQ3d4r4HCv1KGCzoLjWhiuZZMQisxaD9OyMWfgXA/edit?usp=sharing" target="_blank" rel="noopener noreferrer" class="bg-green-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300" aria-label="View Warehouse System Data">View Live Data Structure</a>
+                    </div>
+                </div>
+                <!-- Visual Placeholder -->
+                <div class="case-study-visual bg-gray-200 h-64 flex items-center justify-center rounded-lg overflow-hidden lg:h-auto">
+                    <!-- Dynamic Video/Image Tag (Replace with your uploaded asset path) -->
+                    <img src="assets/wh_system_automation_proof.mp4" alt="Animated GIF/MP4 of warehouse system in action, showing rapid, one-click order processing." class="object-cover w-full h-full" loading="lazy">
+                </div>
+            </div>
+
+            <!-- PROJECT 2: REPLENISHMENT TOOL -->
+            <div class="case-study bg-white p-8 rounded-xl shadow-2xl mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8" data-aos="fade-left">
+                <!-- Visual Placeholder (Appears first on mobile) -->
+                <div class="case-study-visual bg-gray-200 h-64 flex items-center justify-center rounded-lg overflow-hidden order-first lg:order-last">
+                    <!-- Dynamic Image Tag (Replace with your uploaded asset path) -->
+                    <img src="assets/replenish_tool_gui.jpg" alt="Screenshot of Python GUI/CLI for stock forecasting tool, showing ROP and buffer stock calculations." class="object-cover w-full h-full" loading="lazy">
+                </div>
+                <div class="order-last lg:order-first">
+                    <h3 class="text-2xl font-semibold mb-4 border-l-4 border-blue-600 pl-3">2. Predictive Stock Replenishment & Inventory Control Tool</h3>
+                    <div class="space-y-4 text-gray-700">
+                        <p><strong>The Challenge:</strong> Frequent **stock-outs** and inconsistent, unknown **lead times** led to missed sales and customer delays.</p>
+                        <p><strong>The Solution:</strong> A data-powered tool built with **Python** (CLI + GUI). Logic calculates the **Reorder Point (ROP)** by factoring in Lead Time and necessary **Buffer Stock** based on demand variability.</p>
+                        <div class="flex items-center gap-4 text-2xl mt-4" aria-hidden="true">
+                            <span class="text-sm font-bold text-gray-500">Tech Stack:</span>
+                            <i class="fab fa-python text-blue-800" title="Python"></i>
+                            <i class="fas fa-calculator text-gray-500" title="Forecasting Logic"></i>
+                            <i class="fas fa-terminal text-gray-500" title="CLI/GUI Interface"></i>
+                            <i class="fas fa-shield-alt text-green-500" title="Risk Mitigation"></i>
+                        </div>
+                        <p class="text-lg font-bold text-blue-600 pt-3">Measurable Results:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-4">
+                            <li>Provided a **Smart System** for **Peace of Mind** regarding inventory.</li>
+                            <li>Established clear, **data-backed lead times** and reduced stock-outs.</li>
+                        </ul>
+                    </div>
+                    <div class="mt-6">
+                        <a href="https://emadaed.github.io/digisuite/smart_replenishment.html" target="_blank" rel="noopener noreferrer" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300" aria-label="View Replenishment Tool Source">View Source Code & Demo</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROJECT 3: INVOICE MAKER (Updated with Two Buttons) -->
+            <div class="case-study bg-white p-8 rounded-xl shadow-2xl grid grid-cols-1 lg:grid-cols-2 gap-8" data-aos="fade-right">
+                <div>
+                    <h3 class="text-2xl font-semibold mb-4 border-l-4 border-blue-600 pl-3">3. Mobile-First, Bilingual Invoice & Quote Maker</h3>
+                    <div class="space-y-4 text-gray-700">
+                        <p><strong>The Market Challenge:</strong> Freelancers and artisans lacked a **reliable, free, mobile-first** tool for professional, bilingual billing with features like QR codes and clean PDF outputs.</p>
+                        <p><strong>The Solution:</strong> A **free web tool** using vanilla **HTML, CSS, and JS**. Features **Bilingual Accessibility** (Urdu/English), **POS-Style PDF Generation**, and live calculation of totals.</p>
+                        <div class="flex items-center gap-4 text-2xl mt-4" aria-hidden="true">
+                            <span class="text-sm font-bold text-gray-500">Tech Stack:</span>
+                            <i class="fab fa-html5 text-orange-600" title="HTML5"></i>
+                            <i class="fab fa-css3-alt text-blue-500" title="CSS3"></i>
+                            <i class="fab fa-js-square text-yellow-600" title="JavaScript"></i>
+                            <i class="fas fa-globe text-green-600" title="Bilingual"></i>
+                        </div>
+                        <p class="text-lg font-bold text-blue-600 pt-3">Measurable Results:</p>
+                        <ul class="list-disc list-inside space-y-1 ml-4">
+                            <li>Democratized access to professional billing for the artisan community.</li>
+                            <li>Instantly elevated the professionalism of user output.</li>
+                        </ul>
+                    </div>
+                    <!-- RESTORED TWO BUTTONS HERE -->
+                    <div class="mt-6 flex space-x-3">
+                        <a href="https://digiquote-toll.streamlit.app" target="_blank" rel="noopener noreferrer" class="bg-blue-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300" aria-label="Generate Invoice Demo">Generate Invoice/Quote Here</a>
+                        <a href="https://digireceipt-landing-pk.streamlit.app" target="_blank" rel="noopener noreferrer" class="bg-gray-600 text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-700 transition duration-300" aria-label="View Invoice Maker Code">Generate invoice</a>
+                    </div>
+                </div>
+                <!-- Visual Placeholder -->
+                <div class="case-study-visual flex gap-4 bg-gray-200 p-3 rounded-lg">
+                    <!-- Dynamic Image Tags (Replace with your uploaded asset paths) -->
+                    <img src="assets/invoice_mobile_ui.jpg" alt="Invoice Maker Mobile UI Screenshot" class="w-1/2 rounded-md shadow-md" loading="lazy">
+                    <img src="assets/invoice_pdf_output.jpg" alt="Invoice Maker Final PDF Output Screenshot" class="w-1/2 rounded-md shadow-md" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. ABOUT ME & CREDENTIALS (DETAILED SECTION) -->
+    <section id="about" class="py-16 sm:py-24" data-aos="fade-up">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-12" style="font-family: 'Poppins', sans-serif;">The Architect: Credentials, Process, and Mission</h2>
+            <p class="text-lg max-w-4xl mx-auto mb-10 text-gray-700">
+                I am Muhammad Ahmad. My approach to automation is guided by the principles of **Fruitfulness, Empathy, and Long-Term Results**, ensuring solutions are not just functional, but strategically sound and globally compliant.
+            </p>
+            
+            <div class="max-w-4xl mx-auto text-left space-y-10">
+                
+                <div data-aos="fade-right">
+                    <h3 class="text-2xl font-semibold mb-4 text-blue-600 border-b pb-2">Strategic Expertise (Why I'm Different)</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3 text-xl" aria-hidden="true"></i>
+                            <p>
+                                <strong>MSc Supply Chain Operations Automation:</strong> My solutions are built on a foundation of academic expertise in logistics and process efficiency, ensuring maximum operational ROI.
+                            </p>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3 text-xl" aria-hidden="true"></i>
+                            <p>
+                                <strong>PMP Certification (Active):</strong> All projects are executed with a rigorous project management methodology, guaranteeing timely delivery, clear communication, and defined scope.
+                            </p>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3 text-xl" aria-hidden="true"></i>
+                            <p>
+                                <strong>Risk Management & OHS:</strong> I integrate Occupational Health & Safety and risk mitigation into automation design, providing stable and secure service delivery.
+                            </p>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-3 text-xl" aria-hidden="true"></i>
+                            <p>
+                                <strong>Process Improvement Focus:</strong> My goal is never just to code, but to optimize the existing process first, leading to robust, minimal-waste systems.
+                            </p>
+                        </li>
+                    </ul>
+                </div>
+
+                <div data-aos="fade-left">
+                    <h3 class="text-2xl font-semibold mb-4 text-blue-600 border-b pb-2 mt-8">Social Mission (Why I Build)</h3>
+                    <p class="text-gray-700">
+                        My passion is empowering the next generation, shifting the current teacher/mentor regime mindset toward practical skill development. The focus is on making information accessible, turning knowledge into **Minimum Viable Products (MVPs)**, and teaching the power of **code or no-code** solutions.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. COMMUNITY & EMPOWERMENT -->
+    <section id="community" class="bg-gray-50 py-16 sm:py-24" data-aos="fade-up" style="background-color: var(--secondary-color);">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-12" style="font-family: 'Poppins', sans-serif;">Community & Empowerment: Educational Projects</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <!-- Community Card 1 -->
+                <div class="bg-white p-8 rounded-xl shadow-xl border-b-4 border-green-600" data-aos="flip-up" data-aos-delay="100">
+                    <i class="fas fa-gamepad text-4xl text-blue-600 mb-4" aria-hidden="true"></i>
+                    <h3 class="text-xl font-semibold mb-2">Games for Educators</h3>
+                    <p class="text-gray-600 mb-4">Making learning fun and accessible by designing gamified experiences that educators can use to teach complex concepts and foster innovation.</p>
+                    <a href="https://emadaed.github.io/digisuite/secret_number_game.html" class="bg-green-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300" rel="noopener noreferrer">View Games Project</a>
+                </div>
+
+                <!-- Community Card 2 -->
+                <div class="bg-white p-8 rounded-xl shadow-xl border-b-4 border-green-600" data-aos="flip-up" data-aos-delay="200">
+                    <i class="fas fa-book-open text-4xl text-blue-600 mb-4" aria-hidden="true"></i>
+                    <h3 class="text-xl font-semibold mb-2">Study Stuff Toolkit</h3>
+                    <p class="text-gray-600 mb-4">Creating accessible information toolkits to help less privileged youth comprehend knowledge and turn theoretical concepts into Minimum Viable Products (MVPs).</p>
+                    <a href="https://emadaed.github.io/digisuite/studystuff.html" class="bg-green-600 text-white font-medium py-2 px-6 rounded-lg hover:bg-green-700 transition duration-300" rel="noopener noreferrer">Explore Study Tools</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. BOTTOM CTA -->
+    <section class="bg-blue-600 py-12 text-white text-center" data-aos="zoom-in">
+        <div class="container mx-auto px-4">
+            <h3 class="text-2xl sm:text-3xl font-bold mb-4" style="font-family: 'Poppins', sans-serif;">Ready to Automate Your Operations?</h3>
+            <p class="mb-6">Let's discuss your biggest bottleneck and define a strategic path to efficiency.</p>
+            <a href="#footer" class="bg-white text-blue-600 font-bold py-3 px-8 rounded-xl shadow-lg hover:bg-gray-100 transition duration-300 transform hover:scale-105" aria-label="Start the Conversation">
+                Start the Conversation Today <i class="fas fa-comments ml-2" aria-hidden="true"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- 7. FOOTER & CONTACT -->
+    <footer id="footer" class="bg-gray-800 text-white py-16">
+        <div class="container mx-auto px-4 text-center">
+            <h3 class="text-2xl font-bold mb-6" style="font-family: 'Poppins', sans-serif;">Get In Touch</h3>
+            <p class="text-gray-300 mb-8 max-w-xl mx-auto">
+                I'm accessible everywhere—just reach out via email, LinkedIn, or WhatsApp for a fast response.
+            </p>
+            
+            <!-- Explicit Email Address (Guaranteed Contact) -->
+            <div class="mb-8">
+                <p class="text-lg font-medium">
+                    <i class="fas fa-envelope mr-3 text-blue-400" aria-hidden="true"></i>
+                    Email: <a href="mailto:muhammad.a.ahmed@gmail.com" class="text-white hover:text-blue-400 transition duration-300 underline">muhammad.a.ahmed@gmail.com</a>
+                </p>
+            </div>
+
+            <!-- Primary Contact Links (Icons) -->
+            <div class="flex justify-center space-x-8 text-4xl mb-10" role="navigation" aria-label="Social links">
+                <a href="mailto:muhammad.a.ahmed@gmail.com" target="_blank" rel="noopener noreferrer" title="Email" class="hover:text-blue-400 transition duration-300"><i class="fas fa-envelope" aria-hidden="true"></i></a>
+                <a href="https://www.linkedin.com/in/muhammad-nazir-pe-pmp%C2%AE-itil%C2%AE-06a26832" target="_blank" rel="noopener noreferrer" title="LinkedIn" class="hover:text-blue-400 transition duration-300"><i class="fab fa-linkedin" aria-hidden="true"></i></a>
+                <a href="https://wa.me/923095222202?text=Hello,%20I%20saw%20your%20portfolio%20and%20would%20like%20to%20discuss%20an%20automation%20project." target="_blank" rel="noopener noreferrer" title="WhatsApp" class="hover:text-blue-400 transition duration-300"><i class="fab fa-whatsapp" aria-hidden="true"></i></a>
+            </div>
+            
+            <!-- Social/Community Links (Logos) -->
+            <p class="text-sm font-medium text-gray-400 mb-3">Follow me for insights and mentorship:</p>
+            <div class="flex justify-center space-x-6 text-2xl">
+                <a href="https://www.facebook.com/SAADDAA/" target="_blank" rel="noopener noreferrer" title="Facebook" class="hover:text-blue-400 transition duration-300"><i class="fab fa-facebook-square" aria-hidden="true"></i></a>
+                <a href="https://twitter.com/lic09u" target="_blank" rel="noopener noreferrer" title="X (Twitter)" class="hover:text-blue-400 transition duration-300"><i class="fab fa-x-twitter" aria-hidden="true"></i></a>
+                <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer" title="GitHub" class="hover:text-blue-400 transition duration-300"><i class="fab fa-github" aria-hidden="true"></i></a>
+            </div>
+
+            <p class="text-xs text-gray-500 mt-12">&copy; 2025 Muhammad Ahmad | TheOpsArchitect. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- BACK TO TOP BUTTON -->
+    <button id="backToTop" class="fixed bottom-5 right-5 bg-blue-600 text-white p-3 rounded-full shadow-lg transition-opacity duration-300 opacity-0 hover:bg-blue-700" title="Back to Top" aria-label="Back to top">
+        <i class="fas fa-arrow-up" aria-hidden="true"></i>
+    </button>
+
+    <!-- Scripts: load AOS deferred and lightweight nav highlight + interactions -->
+    <script src="https://unpkg.com/aos@next/dist/aos.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.AOS) AOS.init({ duration: 700, once: true });
+
+            // Back to Top Button Logic (with accessible focus)
+            const backToTopButton = document.getElementById('backToTop');
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    backToTopButton.classList.remove('opacity-0');
+                    backToTopButton.classList.add('opacity-100');
+                } else {
+                    backToTopButton.classList.remove('opacity-100');
+                    backToTopButton.classList.add('opacity-0');
+                }
+            });
+            backToTopButton.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                backToTopButton.blur();
+            });
+
+            // Active nav link highlighting (intersection observer)
+            const navLinks = document.querySelectorAll('nav a[href^="#"]');
+            const sections = Array.from(navLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+            if ('IntersectionObserver' in window && sections.length) {
+                const obs = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        const id = entry.target.id;
+                        const link = document.querySelector('nav a[href="#' + id + '"]');
+                        if (link) link.classList.toggle('text-blue-600', entry.isIntersecting);
+                    });
+                }, { root: null, threshold: 0.5 });
+                sections.forEach(s => obs.observe(s));
+            }
+
+            // Keyboard accessibility: make card links focusable if any
+            document.querySelectorAll('a').forEach(a => a.setAttribute('tabindex', '0'));
+        });
+    </script>
+
+</body>
+</html>
