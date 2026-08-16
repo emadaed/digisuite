@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log: Ahmad-AI | Muhammad Ahmad</title>
+<meta name="description" content="A real debugging log: finding and fixing fabrication bugs, deployment gaps, and false test passes while building Ahmad-AI, a local LangGraph + Ollama AI agent with deterministic hallucination guardrails.">
+<meta name="keywords" content="AI Agents, LangGraph, RAG, Tool Calling, Hallucination Mitigation, LLM Evaluation, Agentic AI, Deterministic Guardrails, Ollama, Responsible AI">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log: Finding the Bugs I Built Ahmad-AI to Prevent">
+<meta property="og:description" content="A real debugging log: fabrication bugs, deployment gaps, and false test passes — found, fixed, and regression-tested against a live AI agent.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log.html">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Engineering Log: Finding the Bugs I Built Ahmad-AI to Prevent">
+<meta name="twitter:description" content="A real debugging log from building a local AI agent with deterministic hallucination guardrails.">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log: Finding the Bugs I Built Ahmad-AI to Prevent",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log.html",
+  "about": ["AI Agents", "LangGraph", "RAG", "Hallucination Mitigation", "LLM Evaluation"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log</b></span>
+    <span>SUBJECT: <b>Ahmad-AI</b></span>
+    <span>STATUS: <b>22 Unit Tests · 5/5 E2E Hard Checks Passing</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html" class="current">Engineering Log</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="eyebrow">Engineering Log · Ahmad-AI</span>
+    <h1>Finding the Bugs I Built Ahmad-AI to Prevent</h1>
+    <p class="lede">A real debugging log, not a highlight reel — fabrication bugs, a deployment mismatch, and a false test pass, found and closed across six rounds of adversarial testing against a live system.</p>
+    <div class="tagrow">
+      <span class="tag"><b>22</b> Unit Tests</span>
+      <span class="tag"><b>5/5</b> E2E Hard Checks</span>
+      <span class="tag"><b>6</b> Rounds of Adversarial Testing</span>
+      <span class="tag"><b>LangGraph</b> + <b>Ollama</b></span>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The rule</h2>
+    <p>Ahmad-AI is a local, offline AI agent I built on LangGraph and Ollama, with one non-negotiable design rule: it must never state a specific Quran or Hadith citation unless that citation is independently verified. Not "probably right." Not "sounds authoritative." Verified, or it says nothing.</p>
+    <p>That rule exists because general-purpose LLMs fabricate religious citations confidently and often, and for a system meant to be trustworthy on exactly this kind of question, "confidently wrong" is worse than "honestly uncertain." I designed the system around that principle from day one.</p>
+    <p>Then I spent several weeks trying to prove the system would break its own rule anyway.</p>
+    <p>It did. Repeatedly. Each time in a slightly different way than the last, which turned out to be the actual lesson.</p>
+
+    <h2>What's actually under the hood</h2>
+    <p>Ahmad-AI is a LangGraph state machine wrapped around a locally-running Llama 3 model (via Ollama), with three tools bound to it:</p>
+    <ul>
+      <li><strong>get_current_time</strong> — trivial, but useful for testing whether the model reports tool output faithfully</li>
+      <li><strong>search_knowledge_base</strong> — a RAG pipeline backed by ChromaDB, over Ahmad-AI's own internal docs</li>
+      <li><strong>query_groweasy_db</strong> — read-only, live access to a real Postgres database behind GrowEasy, a supply chain/ERP system I also built</li>
+    </ul>
+    <p>The interesting engineering isn't the tool-calling loop itself — that part is fairly standard. It's everything wrapped around it to stop the model from lying, fabricating, or quietly failing in ways a user wouldn't notice. That's what this log is actually about.</p>
+
+    <h2>Round 1: the first adversarial pass</h2>
+    <p>I ran a short, deliberately awkward set of test questions against the live system — empty database queries, a request for a Quran citation, a request for a Hadith reference, an ambiguous sort question. I expected a couple of rough edges. I got six real bugs, one of them serious enough to be the whole reason this system exists.</p>
+    <p><strong>The one that mattered most:</strong> I asked which items were classified as "Class A" in a table with no matching rows. The agent correctly said <em>"the query did not return any results."</em> Then, in the same reply, it invented two fake item IDs with fake stock levels anyway — flatly contradicting the sentence it had just written.</p>
+    <p><strong>The one that was actually dangerous:</strong> I asked what Islam says about riba (usury), with a source. The agent cited verse 5:51 — a real Quran verse number, attached to the wrong verse entirely. 5:51 concerns interfaith alliances; it has nothing to do with usury. I'd already built a citation guard specifically to catch fabricated citations. It never fired, because its regex only recognized <code>Surah [name] X:Y</code> formatting, and the model was writing <code>(Quran X:Y)</code>. A safety mechanism that silently doesn't match the shape of the thing it's supposed to catch is functionally the same as not having one.</p>
+    <p>Four smaller bugs came with it: the time tool's return value sometimes never made it into the reply, a supplier-KPI "lowest score" query sorted in the wrong direction (masked by a small dataset), an ABC-classification query hit the wrong table on the first try, and a knowledge-base search fired on general religious questions it had no business touching.</p>
+
+    <h2>The fix philosophy: code, not more instructions</h2>
+    <p>My first instinct was to add stronger wording to the system prompt. I didn't, because a system prompt is a leash — it can be ignored, misread, or drift under pressure. Code can't. So instead of a stronger rule, I built a deterministic backstop that reads the actual tool output already sitting in conversation state and overrides the model's response when the shape of a known failure appears — regardless of what the model wrote:</p>
+    <pre><code>def apply_tool_result_guards(state, response):
+    """Deterministic backstop: if the last DB query came back empty or hard-
+    errored, don't trust the model's prose about what it found. Override
+    entirely with a fixed, honest message."""
+    ...
+    if _is_no_data(last_tool_message):
+        return "No matching data was found for that query. The data may not " \
+               "exist in GrowEasy yet, or try different filters."</code></pre>
+    <p>And the citation guard became a whitelist, not a validity check — a distinction that turned out to matter a lot later:</p>
+    <pre><code>_ALLOWED_CITATIONS = {"20:114"}  # the only pre-verified citation in the system
+
+def enforce_citation_guard(text):
+    for match in _CITATION_PATTERN.finditer(text):
+        if not any(allowed in match.group(0) for allowed in _ALLOWED_CITATIONS):
+            return SAFE_ISLAMIC_FALLBACK  # blocked, even if the citation is real
+    return text</code></pre>
+    <p>That last part is deliberate: even a citation that happens to be <em>correct</em> gets stripped if it isn't on the pre-verified list. No partial credit for guessing right. That decision looked overly cautious in isolation. It turned out to be the only thing standing between "safe" and "safe most of the time."</p>
+
+    <h2>Round 2: the fix that wasn't running</h2>
+    <p>I retested. The bugs looked gone. Then I looked closer and noticed the model's replies weren't using the exact fixed wording my code was supposed to produce — which is impossible for a hard-coded string unless the code generating it isn't actually running.</p>
+    <p>It wasn't. Twice. The file I thought I'd deployed had never actually replaced the one on disk — a browser download that silently didn't overwrite the original, and then a second near-miss after that. Running my own unit tests directly against the live file caught it immediately: <code>AttributeError: module has no attribute 'apply_tool_result_guards'</code>. The function I'd been testing against didn't exist in the file that was actually executing.</p>
+    <p>This turned into the most useful process change of the whole project. I added a build stamp, printed at startup, whose only job is to make "is this fix actually live" a non-question:</p>
+    <pre><code>AGENT_BUILD = "2026-08-16.1-quran-quote-and-verse-citation-guards"</code></pre>
+    <p>Every retest since starts by reading that line before trusting anything else in the output. It sounds almost too simple to mention. It's also the single change that stopped an entire category of wasted debugging cycles.</p>
+
+    <h2>Round 3: a sneakier gap</h2>
+    <p>With the fix confirmed live, adversarial testing kept finding new shapes of the same underlying problem:</p>
+    <ul>
+      <li>A hard database connection error (not just an empty result) hit a code path my guard didn't cover yet — closed by extending the same override logic to database errors, not just empty result sets.</li>
+      <li>The model correctly identified the lowest-scoring supplier's <em>value</em> from a properly sorted query, then attached it to the <em>wrong row's identity</em> — two suppliers happened to share a display name, and the model quietly mixed fields between them. Fixed by having the query tool state the answer explicitly (<em>"row 1, id=4, has the lowest value — don't combine this with fields from a different row"</em>) instead of handing over raw JSON and hoping the model read it correctly.</li>
+      <li>Most instructively: the model quoted real, verbatim Hadith text — with zero citation number attached at all. My citation-number regex had nothing to match, because there was no number. It slipped through as a false pass in my own test suite. The project has zero verified Hadith text in its knowledge base, so a long quoted string sitting next to a scripture-related word is exactly as unverifiable as a fabricated citation number — the guard just hadn't been taught to look for that shape yet.</li>
+    </ul>
+
+    <h2>Building an evaluation harness that doesn't lie to you either</h2>
+    <p>Manually retyping the same test prompts into a terminal doesn't scale, and it's exactly the kind of process that let the "fix wasn't running" bug hide for two rounds. So I built two layers of automated testing:</p>
+    <p>A unit-test suite that runs the guard functions directly against synthetic inputs — fast, no live model or database needed, currently 22 tests covering every bug found so far.</p>
+    <p>An end-to-end harness that drives the real compiled graph against the live Ollama model and live database, split deliberately into two kinds of checks:</p>
+    <ul>
+      <li><strong>Hard checks</strong> — deterministic guard behavior. These must always pass. If one fails, it's a real regression, not noise.</li>
+      <li><strong>Review checks</strong> — LLM reasoning quality (e.g., "does it correctly identify the lowest-scoring supplier"). These get printed for a human to read, not force-fit into pass/fail. Pretending fuzzy model output is reliably pass/fail testable is how you end up with a flaky suite you learn to ignore.</li>
+    </ul>
+    <p>That split is the part I'd defend hardest to another engineer. Treating everything as binary pass/fail either hides real regressions behind noisy false failures, or — worse — quietly downgrades your guardrail checks to "eh, close enough" the same way the model itself might.</p>
+
+    <h2>Round 4: engineering for requirements, not just bugs</h2>
+    <p>Once the fabrication bugs were closed, I went looking for gaps against what a production AI agent role actually asks for, rather than what my own testing happened to stumble onto:</p>
+    <ul>
+      <li><strong>Bounded execution.</strong> LangGraph has a default recursion limit, but it fails by throwing an unhandled exception — not the same as an engineered decision. I added an explicit, much lower cap (<code>MAX_TOOL_ROUNDS = 6</code>) that degrades into a clear message instead of a crash.</li>
+      <li><strong>Retry logic, scoped honestly.</strong> A transient connection failure (container still starting, brief network blip) is worth one retry. A bad column name will fail identically every time — retrying it just wastes time and hides the real problem. The retry logic only fires on a connection-level error, deliberately excluding everything else.</li>
+      <li><strong>Observability.</strong> Every turn now logs tool-call count and latency, specifically because the deployment-mismatch bug in Round 2 was hard to diagnose without exactly this kind of visibility.</li>
+    </ul>
+
+    <h2>Round 5: the same bug, wearing a different coat</h2>
+    <p>Weeks later, with everything green across two full test suites, one more adversarial pass against the live system produced this, verbatim, from a "what does Islam say about riba, with a source" prompt:</p>
+    <blockquote><p>"The Quran explicitly states in Surah Al-Baqarah, verse 275..." — followed by several sentences of verbatim translated verse text.</p></blockquote>
+    <p>A specific citation and a verbatim scripture quote, both showing up as a passing test. The content was actually accurate — 2:275 genuinely is the riba passage, and the quote was a real translation. That's exactly why it mattered: correctness on one run guarantees nothing about the next, which is the entire premise this project is built on. Two independent gaps let it through — my citation regex required a colon-separated format (2:275), and "verse 275" has no colon at all; and my quote-detection guard only checked for the word "Hadith" nearby, so a Quran-side verbatim quote was invisible to it. Both closed, both regression-tested. Nothing about this system's guardrails is ever really "done" — it's a set of specific, named gaps closed one at a time, with the humility to assume there's another shape out there I haven't tested for yet.</p>
+
+    <h2>Where it stands now</h2>
+    <p>22 unit tests. An end-to-end harness with 5 hard checks, all passing against the live model and live database as of the most recent run. Every bug listed above is closed and regression-tested against the real system, not just believed fixed. Known, accepted limitations are documented rather than hidden: the system can't yet answer questions that require joining across two tables in a single query (it fails safely rather than guessing), and a knowledge-base search occasionally fires on questions it doesn't need to — harmless, just an efficiency cost, and a low priority by design.</p>
+
+    <h2>What I'd tell another engineer building something like this</h2>
+    <p>A system prompt is a leash, not a lobotomy — deterministic code is the only thing that reliably holds under adversarial pressure.</p>
+    <p>A whitelist beats a correctness checker. Verifying "is this citation accurate" is a much harder problem than checking "is this citation on the pre-approved list." The second one is boring and it actually works.</p>
+    <p>Don't trust that a deploy happened — verify it. A version stamp printed at startup costs nothing and eliminates an entire category of wasted debugging time.</p>
+    <p>Test the test. A weak assertion produces a false pass just as dangerously as a missing guard does — my own harness let two real gaps through as green checkmarks before I caught them on close reading.</p>
+    <p>Distinguish transient failures from permanent ones before you decide to retry anything. Retrying a bad column name is just a slower way to fail.</p>
+    <p>Don't ask a language model to do arithmetic or entity-matching you can compute deterministically in code. Sorting the rows correctly didn't stop the model from misreading them — stating the answer explicitly did.</p>
+
+    <h2>What's next</h2>
+    <p>Two directions I'm actively considering: sourcing a properly verified Quran and Hadith corpus so the system can move from "safely decline every time" to "retrieve and correctly cite real, verified sources" — a meaningfully bigger architectural step than anything above, since it means teaching the guard to verify citations against retrieved content rather than a small fixed whitelist. And extending the database tool with real cross-table join support, so compound questions spanning classification and inventory data can be answered instead of safely refused.</p>
+    <p>Both are for later. For now, this is where the system actually stands — tested, not assumed.</p>
+
+    <hr>
+    <p style="font-size:14px;">Have questions about how any of this works, or want to see the code? <a href="index.html#contact" style="color:var(--amber-soft);">Get in touch</a> — I'm happy to walk through it.</p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems — and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
