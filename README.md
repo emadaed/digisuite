@@ -1,4 +1,4 @@
-# Muhammad Ahmad — Supply Chain Systems & Automation Architect
+# Muhammad Ahmad — AI Agent Engineer | Digital Supply Chain Systems Architect | PMP®, RMP®
 
 **Portfolio & Digital Projects Hub**
 
@@ -13,18 +13,21 @@
 
 ## 👨‍💻 About Me
 
-I am a **Supply Chain Systems & Automation Architect** with deep operational leadership experience and a strong technical builder mindset.
+Operations Built, Then Coded.
+I build and optimize supply chains that actually work — combining 15+ years of hands-on operations leadership with the ability to code the systems that power them.
+ 
+From founding the operational backbone for one of Ericsson’s largest managed services contracts in Saudi Arabia (building vendor ecosystems, SLA governance, and large-scale warehouse migrations with zero disruption) to transforming a fragmented SME supply chain in Pakistan — delivering 50% faster deliveries, 20% cost reduction, and managing a $10M+ logistics budget, I deliver measurable results.
+ 
+Today, I design and ship production software that solves real operational pain points:
+• GrowEasy — AI-powered full-stack ERP for SMEs (inventory, invoicing, finance), now with a live SCM data layer
+ • Ahmad-AI — A local, offline, tool-calling AI agent (LangGraph + Ollama) with RAG-based retrieval and deterministic hallucination guardrails, verified by a 22-test regression suite and an end-to-end evaluation harness
+ • Custom WMS and automation tools replacing expensive enterprise systems
+ • Scalable LMS/CRM platforms actively used by education providers 
 
-From founding operational frameworks for one of Ericsson’s largest managed services contracts in Saudi Arabia to transforming fragmented supply chain operations in Pakistan, I deliver measurable impact through process excellence and custom technology solutions.
-
-**Certified**: PMP® | RMP®  
-**Education**: MSc Operations & Supply Chain Management
-
-**Currently Open** to global and remote roles in:
-- Supply Chain Digital Transformation
-- Operations Technology & Automation
-- Program / Project Management with Systems focus
-
+PMP® and RMP® certified with an MSc in Operations & Supply Chain Management.
+ 
+I'm particularly passionate about Supply Chain Digital Transformation, Agentic AI Engineering, and building practical, trustworthy automation.
+ 
 ---
 
 ## 🚀 Featured Projects
@@ -43,7 +46,7 @@ Lightweight end-to-end fulfillment system built with Google Sheets + Apps Script
 Automates invoicing, packing slips, shipping labels, and records — a practical alternative to expensive commercial WMS.
 
 ### Ahmad-AI *(In Active Development)*
-Local ethics-aligned AI assistant focused on truthfulness, reference accuracy, and safety. Built to counter common LLM hallucinations and bias.
+Built a local, tool-calling AI agent (LangGraph + Ollama) with live, read-only access to a production Postgres SCM/ERP database. Engineered deterministic fallback guardrails against hallucinated data and unverified citations, bounded execution with a hard iteration ceiling, and scoped retry logic distinguishing transient from permanent failures — not just prompt-level rules. Verified by a 22-test regression suite and an end-to-end harness separating deterministic guardrail checks from LLM-reasoning review, which has already caught real deployment gaps and guardrail coverage gaps under adversarial testing.
 
 ---
 
@@ -77,7 +80,7 @@ text---
 
 ---
 
-**Open to collaboration and opportunities** where deep operational expertise meets modern automation.
+**Open to collaboration and opportunities** Agentic AI / AI Systems Engineering roles — especially where I can combine deep operational expertise with modern agent architecture and production systems thinking.
 
 ---
 
