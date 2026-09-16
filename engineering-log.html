@@ -105,6 +105,11 @@
   .foot-links a:hover{ color:var(--amber-soft); }
   .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
   .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
 </style>
 </head>
 <body>
@@ -125,6 +130,7 @@
       <a href="index.html#experience">Experience</a>
       <a href="index.html#systems">Systems Built</a>
       <a href="engineering-log.html" class="current">Engineering Log</a>
+      <a href="engineering-log-2.html">Log 02</a>
       <a href="index.html#contact">Contact</a>
     </div>
   </div>
@@ -133,6 +139,7 @@
 <header class="art-header">
   <div class="wrap">
     <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 01</span>
     <span class="eyebrow">Engineering Log · Ahmad-AI</span>
     <h1>Finding the Bugs I Built Ahmad-AI to Prevent</h1>
     <p class="lede">A real debugging log, not a highlight reel — fabrication bugs, a deployment mismatch, and a false test pass, found and closed across six rounds of adversarial testing against a live system.</p>
@@ -141,6 +148,10 @@
       <span class="tag"><b>5/5</b> E2E Hard Checks</span>
       <span class="tag"><b>6</b> Rounds of Adversarial Testing</span>
       <span class="tag"><b>LangGraph</b> + <b>Ollama</b></span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html" class="active">Chapter 01: Guardrails & Hallucination Prevention</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Semantic Search</a>
     </div>
   </div>
 </header>

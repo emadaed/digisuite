@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log 02: Building a Multilingual Islamic AI | Muhammad Ahmad</title>
+<meta name="description" content="A second debugging log: version drift, cosine vs L2 distances, and semantic search failures while building a multilingual Quran + Hadith retrieval system with Streamlit and ChromaDB.">
+<meta name="keywords" content="Semantic Search, RAG, Multilingual Embeddings, ChromaDB, Streamlit, Vector Databases, Islamic AI, NLP, Deployments">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-2.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log 02: Building a Multilingual Islamic AI">
+<meta property="og:description" content="Six bugs, one rebuild cycle, and a lot of humility — how I got a Quran + Hadith semantic search system from broken to bilingual.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-2.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log 02: Building a Multilingual Islamic AI",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-2.html",
+  "about": ["Semantic Search", "RAG", "Multilingual Embeddings", "ChromaDB", "Streamlit"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+ 
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log 02</b></span>
+    <span>SUBJECT: <b>Islamic Knowledge Assistant</b></span>
+    <span>STATUS: <b>Live · 56,998 texts · Multilingual</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Engineering Log</a>
+      <a href="engineering-log-2.html" class="current">Log 02</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 02</span>
+    <span class="eyebrow">Engineering Log · Islamic Knowledge Assistant</span>
+    <h1>Getting a Multilingual Islamic Search System From Broken to Bilingual</h1>
+    <p class="lede">Six bugs, one rebuild cycle, and a lot of humility — how version drift, a bad distance metric, and one wrong model choice took a working English-only search engine to a genuinely multilingual one.</p>
+    <div class="tagrow">
+      <span class="tag"><b>56,998</b> Islamic Texts</span>
+      <span class="tag"><b>6,236</b> Quran Verses</span>
+      <span class="tag"><b>50,762</b> Hadith</span>
+      <span class="tag"><b>ChromaDB</b> + <b>Streamlit</b></span>
+      <span class="tag"><b>Multilingual</b> Embeddings</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html" class="active">Chapter 01: Guardrails & Hallucination Prevention</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Semantic Search</a>
+    </div>
+    
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The goal</h2>
+    <p>This is the second chapter of the Ahmad-AI build. The first chapter was about <em>safety</em> — making an agent that refuses to fabricate citations. This chapter is about <em>capability</em> — making an agent that can actually find the right verse, in the right language, with the right intent.</p>
+    <p>The product: a browser-based Islamic knowledge assistant. Ask it "what does the Quran say about patience" and it returns the canonical sabr verses. Ask it "حور العين" in Arabic and it returns the classical hoor passages. Ask it "namaz" in Urdu and it returns prayer hadiths. Ask it "2:255" and it returns Ayat-ul-Kursi exactly.</p>
+    <p>Under the hood: Streamlit for the UI, ChromaDB for vector storage, a multilingual sentence-transformer for embeddings, and 56,998 indexed texts spanning six canonical Quran translations and nine major Hadith collections.</p>
+    <p>Getting from zero to "working" was four weeks. Getting from "working" to "actually good" was six more bugs, most of which I built into the system myself.</p>
+
+    <h2>What's under the hood</h2>
+    <p>The architecture is deliberately simple:</p>
+    <ul>
+      <li><strong>Two isolated vector stores</strong> — one for Quran verses, one for Hadith — kept in separate folders so their metadata schemas can diverge without cross-contamination.</li>
+      <li><strong>A multilingual embedding model</strong> running locally on CPU — no cloud calls, no rate limits, no data leaving the machine.</li>
+      <li><strong>A hybrid search path</strong> — exact citation parsing fires first (instant, no model involved); semantic search only runs for open-ended queries.</li>
+      <li><strong>A synonym expansion layer</strong> — the model doesn't know what "tahajjud" or "حور العين" mean, so I taught the query layer to expand them before search.</li>
+    </ul>
+    <p>The first real design decision was to <em>not</em> combine everything into one search — because Quran verses and Hadith passages have completely different structures, formats, and metadata needs. Sharing a vector space between them would have averaged the two.</p>
+
+    <h2>Week 1-2: data pipeline, then a hard lesson in version drift</h2>
+    <p>The Quran side went smoothly. I pulled a canonical dataset, extracted verses, translations, and metadata, and indexed 6,236 entries without incident. The Hadith side, 50,762 entries from nine collections, went equally smoothly — until I tried to <em>read</em> the databases back.</p>
+    <p>Both vector databases had been created across a range of ChromaDB library versions as I iterated. Individually, each version worked. But a database written by one version and read by another triggered a hard Rust-level panic — <code>range start index 10 out of range for slice of length 9</code> — deep inside the ChromaDB SQLite backend, before any Python exception handler could catch it. The panic was thrown from the compiled bindings, not from Python, so it killed the whole process.</p>
+    <p>The fix was a full rebuild of both databases under one locked version. But the deeper lesson was about how silently libraries change formats between minor releases, and how "it works on my machine" quietly becomes "it works on my machine running exactly this version of this library and no other."</p>
+    <blockquote><p>ChromaDB 1.0 was a major structural change from 0.5 — different SQLite schema, different default distance metric, different collection metadata format. Every bug in the rest of this log traces back to that one version boundary in one way or another.</p></blockquote>
+
+    <h2>Week 3: nine hundred megabytes of Hadith, and a power cut</h2>
+    <p>Indexing 50,762 Hadiths with a 384-dimensional embedding model produced a database just under a gigabyte and took about 20 minutes of solid CPU time. Halfway through the first attempt, the power in my neighborhood cut.</p>
+    <p>The ChromaDB write path is transaction-safe, so nothing was corrupted — but the collection was only 59.4% populated when the process died. I wrote a short resume script that read the set of already-indexed IDs directly from the collection, diffed it against the full dataset, and only embedded the missing 20,612 rows. Twelve minutes later the collection was whole.</p>
+    <p>This is the kind of thing that looks obvious in retrospect and never occurs to you until the first time it happens. Every long-running indexing job I write now starts with a checkpoint pattern baked in from minute one.</p>
+
+    <h2>Week 4: the multilingual upgrade — and a rebuild, and another rebuild</h2>
+    <p>English-only semantic search worked. But it didn't understand Islamic terminology. Ask about "hoor" and it returned generic Paradise verses. Ask about "tahajjud" and it returned general prayer hadiths. Ask about "namaz" and it fell back to whatever English keyword matched.</p>
+    <p>The fix, in theory, was simple: swap the English-only embedding model for a multilingual one. Same dimension count, same API, same pipeline. In practice, this triggered four separate classes of bug that took an entire day to untangle.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 01 · Environment</div>
+      <h4>The Python version that was silently used</h4>
+      <p>ChromaDB's underlying HNSW library has no prebuilt wheels for Python 3.12 on Windows. When the virtual environment was recreated, Windows silently picked Python 3.12 instead of 3.11, and the vector store refused to initialize. Every subsequent error looked like a database problem but was actually an environment problem.</p>
+      <p class="lesson">Lesson: pin the Python version in the venv creation command explicitly. Never trust the default.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 02 · Dependencies</div>
+      <h4>A protobuf version conflict that broke two libraries at once</h4>
+      <p>Streamlit needed protobuf &lt;6. A transitive dependency of the observability stack needed protobuf ≥6.33. Installing either one broke the other. The fix was to pin Streamlit to an older minor version that accepted protobuf 5.x, satisfying both constraints at the boundary.</p>
+      <p class="lesson">Lesson: pin ranges, not exact versions, in requirements.txt. Let pip find the compatible intersection; forcing versions creates false conflicts.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 03 · Database semantics</div>
+      <h4>L2 distance vs. cosine distance — same numbers, different meaning</h4>
+      <p>The scoring code assumed ChromaDB returned cosine distance (range 0-2) and computed similarity as <code>1 - distance/2</code>. But the collections had been created with the default L2 metric, whose range depends on the vectors' norms. When I switched to a model that produced unnormalized embeddings, every L2 distance grew by 3-6x, and the formula floored every score to 0%.</p>
+      <p>The fix was to rebuild both collections with <code>hnsw:space: "cosine"</code> explicitly, and re-index. Cosine distance has a fixed 0-2 range regardless of vector norm, so the original formula works again.</p>
+      <p class="lesson">Lesson: always check the distance metric on the collection, not just the score formula in the code. They can disagree silently.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 04 · Model mismatch</div>
+      <h4>The wrong model was encoding the query</h4>
+      <p>Even with cosine space, scores stayed at 0%. The databases had been indexed correctly with the multilingual model — I verified by re-encoding a stored verse and confirming a 1.0000 similarity — but the <em>query</em> was being re-encoded by ChromaDB's internal default model, which is English-only. The two vector spaces were completely separate.</p>
+      <p>The fix was to stop passing <code>query_texts</code> to ChromaDB and start passing <code>query_embeddings</code> instead, computed with the same model used at index time.</p>
+      <p class="lesson">Lesson: never let a library silently choose the embedding model for you. If you control the index model, control the query model too.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 05 · Data, not code</div>
+      <h4>The Hadith corpus didn't contain what we were searching for</h4>
+      <p>After all four environment fixes, Arabic queries like <code>حور العين</code> finally returned the correct Quran verses. But Hadith results for "hoor" still returned hadiths about pious wives and greetings — never the classical Hoor al-Ayn narrations. I queried the dataset directly for the Arabic word <code>حور</code> and found exactly five hits — all of them as part of narrator names, none of them as the subject of the hadith.</p>
+      <p>The dataset was simply missing that content. Not a bug in the code, not a failure of the model — a limitation of the source. The fix, for a future iteration, is to supplement with a Hadith collection that has stronger eschatology coverage.</p>
+      <p class="lesson">Lesson: investigate the data before blaming the algorithm. A semantic search system can only find what's actually there.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 06 · Deployment</div>
+      <h4>The URLs that pointed to the wrong folders</h4>
+      <p>Windows treats <code>D:\Ahmad-AI</code> and <code>D:\ahmad-ai</code> as the same folder — but the ChromaDB Rust bindings compute path hashes byte-for-byte, so the casing mattered. Virtual environments created at the lowercase path silently mis-resolved when the working directory used uppercase. The fix was to standardize every path reference, every config file, and every venv on one canonical casing.</p>
+      <p class="lesson">Lesson: on Windows, casing is not decorative. Any tool that stores paths as bytes needs consistent casing everywhere.</p>
+    </div>
+
+    <h2>Where it stands now</h2>
+    <p>The system runs locally, exposes itself through a Streamlit UI, is password-gated, and can be shared publicly through a Cloudflare Tunnel without opening any inbound ports on the machine. It is deployed, multilingual, and access-controlled.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">56,998</div><div class="lbl">Indexed Islamic Texts</div></div>
+      <div class="metric"><div class="num">&lt;10ms</div><div class="lbl">Exact Citation Lookup</div></div>
+      <div class="metric"><div class="num">~0.8s</div><div class="lbl">Semantic Search Latency</div></div>
+      <div class="metric"><div class="num">3</div><div class="lbl">Languages Tested</div></div>
+    </div>
+
+    <p>Sample verified outputs from the deployed system:</p>
+    <ul>
+      <li><code>what is hoor</code> → Quran 56:22 · "And [for them are] fair women with large, [beautiful] eyes" (78% match)</li>
+      <li><code>حور العين</code> (Arabic) → Quran 37:48 · "And with them will be women limiting [their] glances" (79% match)</li>
+      <li><code>tahajjud</code> → Quran 25:64 · "And those who spend [part of] the night to their Lord prostrating" (82% match)</li>
+      <li><code>namaz</code> (Urdu) → Quran 107:4 · "So woe to those who pray" (89% match)</li>
+      <li><code>2:255</code> → Ayat-ul-Kursi, exact, instant</li>
+    </ul>
+
+    <h2>What I'd tell another engineer building something like this</h2>
+    <p>Pin the Python version <em>and</em> every library that touches your data persistence layer. ChromaDB, SQLite bindings, and vector databases in general are not interchangeable across minor versions. The upgrade path is a rebuild, not a migration.</p>
+    <p>Test the model in isolation before committing to a rebuild. I could have caught the multilingual model bug in ten minutes with a standalone similarity script — instead I caught it after two full rebuilds of both databases.</p>
+    <p>When scores collapse to zero, check three things in order: the distance metric, the query embedding model, and the stored embedding model. Ninety percent of "semantic search is broken" bugs live in one of those three.</p>
+    <p>Investigate data before blaming code. The Hadith coverage gap looked like a semantic search failure. It was actually a source dataset limitation. Only querying the database directly revealed the truth.</p>
+    <p>Keep the old version working until the new one is proven. Having both vector stores live in parallel — English-only and multilingual — meant every failed multilingual attempt was a two-line config revert, not a full disaster recovery.</p>
+
+    <h2>What's next</h2>
+    <p>Two immediate improvements are queued. First, cleaning the isnad (narrator chain) prefix out of Hadith text before indexing — the chain sometimes takes up more space in the embedding than the actual content, which dilutes semantic matching across all queries. Second, supplementing the Hadith corpus with a collection that has stronger coverage of Paradise, eschatology, and Hoor narrations, so queries about those topics return Hadith results instead of only Quran results.</p>
+    <p>Longer term, the plan is a second chapter of this same system — a business-data assistant built on the same agent framework, connected to a live ERP database, sharing the same UX and deployment pipeline. Same pattern, different domain.</p>
+    <p>This is where it actually stands. Not a demo. Not a proof of concept. A working, deployed, multilingual system, tested against real queries in three languages.</p>
+
+    <hr>
+    <p style="font-size:14px;">Curious about the earlier chapter — how the guardrails against hallucination were built? <a href="engineering-log.html" style="color:var(--amber-soft);">Read Chapter 01 &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems — and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
