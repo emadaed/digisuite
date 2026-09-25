@@ -228,6 +228,7 @@
       <a href="#experience">Experience</a>
       <a href="#systems">Systems Built</a>
       <a href="engineering-log.html">Engineering Log</a>
+            <a href="engineering-log-3.html">Voice AI</a>
       <a href="#contact">Contact</a>
     </div>
   </div>
@@ -238,7 +239,7 @@
     <span class="eyebrow">AI Agent Engineer &amp; Digital Supply Chain Architect</span>
     <h1>Muhammad Ahmad — AI Agent Engineer &amp; Supply Chain Architect</h1>
     <p class="role">RAG, Tool-Calling &amp; LangGraph — PMP&reg; &amp; RMP&reg; Certified — Operations Built, Then Coded</p>
-    <p class="lede">I've spent <strong>15+ years</strong> building and optimizing operations that power telecom networks and supply chains — from founding the vendor ecosystem for one of Ericsson’s largest managed services contracts in KSA to rebuilding a fragmented SME operation. I don’t just manage processes — I design the systems (SaaS ERP, WMS, LMS) that run them. More recently, I've applied that same systems discipline to building AI agents — LangGraph, RAG, deterministic guardrails against hallucination — most recently <a href="engineering-log.html" style="color:var(--amber-soft); text-decoration:underline;">Ahmad-AI (full engineering log)</a>. PMP® &amp; RMP® certified. I ship both SOPs and production code with equal rigor.</p>
+    <p class="lede">I've spent <strong>15+ years</strong> building and optimizing operations that power telecom networks and supply chains — from founding the vendor ecosystem for one of Ericsson’s largest managed services contracts in KSA to rebuilding a fragmented SME operation. I don’t just manage processes — I design the systems (SaaS ERP, WMS, LMS) that run them. More recently, I've applied that same systems discipline to building AI agents — LangGraph, RAG, deterministic guardrails against hallucination — most recently <a href="engineering-log.html" style="color:var(--amber-soft); text-decoration:underline;">Ahmad-AI</a> and <a href="engineering-log-3.html" style="color:var(--amber-soft); text-decoration:underline;">Ahmad Voice AI</a> (full engineering logs). PMP® &amp; RMP® certified. I ship both SOPs and production code with equal rigor.</p>
     <div class="tagrow">
       <span class="tag"><b>AI Agent</b> Engineering</span>
       <span class="tag"><b>15+ YRS</b> Operations Leadership</span>
@@ -337,13 +338,23 @@
       <div class="card">
         <span class="stamp dev">In Active Development</span>
         <h3>Ahmad-AI</h3>
-        <p><em>Local, Tool-Calling AI Agent.</em> A LangGraph + Ollama agent engineered for honesty where general-purpose LLMs tend to fabricate — with live, read-only access to GrowEasy's production SCM database. Deterministic guardrails (not just prompt rules) block hallucinated data and unverified citations at the point of failure, verified by a 16-test regression suite and an end-to-end harness that's already caught two real bugs before either reached a user.</p>
-        <div class="stackrow"><span>LangGraph</span><span>Ollama</span><span>Llama 3 8B</span><span>ChromaDB</span><span>PostgreSQL</span><span>Python</span></div>
+        <p><em>Multilingual Quran &amp; Hadith research agent.</em> A retrieval-augmented Islamic knowledge system serving <strong>113,842 indexed records</strong> — 6,236 Quran verses across 114 surahs, 50,762 hadiths from the Sunnah.com corpus, and <strong>56,844 hadiths</strong> newly extracted from nine canonical Shamela collections (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah, Muwatta, Musnad Ahmad, Darimi). Two-stage retrieval: <code>paraphrase-multilingual-MiniLM-L12-v2</code> for recall across three ChromaDB collections, then <code>GATE-Reranker-V1</code> — an Arabic-native cross-encoder — for precision reranking, with exact-citation lookup for surah:ayah queries. Built on a Shamela <code>.bok</code> → SQLite → JSONL → ChromaDB pipeline with SHA-256 deduplication, deterministic internal↔master book ID mapping, and per-book schema reconciliation across nine heterogeneous source editions.</p>
+        <div class="stackrow"><span>ChromaDB</span><span>Sentence-Transformers</span><span>GATE-Reranker</span><span>Python</span><span>Shamela</span><span>SQLite</span></div>
         <div class="card-links">
           <a href="engineering-log.html">Read Engineering Log &rarr;</a>
+          <a href="engineering-log-2.html">Week 5 — Shamela Integration &rarr;</a>
         </div>
       </div>
-    </div>  
+            <div class="card">
+              <span class="stamp live">Live</span>
+              <h3>Ahmad Voice AI</h3>
+              <p><em>Real-Time Voice Agent.</em> A continuous, multi-turn voice assistant that listens through the microphone, streams raw PCM over WebSockets, and speaks back in natural voice — no push-to-talk, no reconnect loops. Built on Deepgram's Voice Agent API, which orchestrates speech recognition (Nova-3), reasoning (GPT-4o-mini), and neural speech synthesis (Aura-2) inside a single managed session. Includes hardware-safe asyncio audio pipelines and a reconnect supervisor that survives transport drops mid-conversation.</p>
+              <div class="stackrow"><span>Python</span><span>asyncio</span><span>PyAudio</span><span>Deepgram</span><span>Nova-3</span><span>Aura-2</span><span>WebSockets</span></div>
+              <div class="card-links">
+                <a href="engineering-log-3.html">Read Engineering Log &rarr;</a>
+              </div>
+            </div>
+      </div>  
 </section>
 
 <section id="credentials" class="block reveal">

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ahmad Voice AI · Log 01: Real-Time Voice Transport | Muhammad Ahmad</title>
+<meta name="description" content="A debugging log on C-extension loop blocking, queue flooding, transport silences, SDK parameter traps, reconnect logic, and the migration from Gemini Live to Deepgram Voice Agent API.">
+<meta name="keywords" content="Gemini Live API, Deepgram Voice Agent, Asyncio, WebSockets, Audio Streaming, PyAudio, Real-Time AI, Voice Agent, Python">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-3.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ahmad Voice AI · Log 01: Real-Time Audio Transport &amp; Keepalive Engineering">
+<meta property="og:description" content="Six Gemini failures, loop deadlocks, silent sockets, and the migration to Deepgram — how I shipped a stable multi-turn voice agent.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-3.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Ahmad Voice AI · Log 01: Real-Time Voice Transport",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-3.html",
+  "about": ["Gemini Live API", "Deepgram Voice Agent API", "Asyncio", "WebSockets", "PyAudio", "Real-Time AI"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  .verdict{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:22px 24px; margin:26px 0; }
+  .verdict h3{ margin-top:0; }
+  .verdict p:last-child{ margin-bottom:0; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Ahmad Voice AI · Log 01</b></span>
+    <span>SUBJECT: <b>Real-Time Voice Transport</b></span>
+    <span>STATUS: <b>Shipped · Deepgram Voice Agent API</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Ahmad-AI · Log</a>
+      <a href="engineering-log-2.html">Log 02</a>
+      <a href="engineering-log-3.html" class="current">Voice AI · Log 01</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Ahmad Voice AI · Log 01</span>
+    <span class="eyebrow">Ahmad Voice AI · Engineering Log 01</span>
+    <h1>Six Transport Failures, One Model Migration, and the Route to a Stable Real-Time Voice Agent</h1>
+    <p class="lede">Blocking C-calls, memory-buffered audio floods, silent sockets, Vertex-only parameters, reconnect supervisors, and the eventual migration from Gemini Live to Deepgram's Voice Agent API — what it took to ship a multi-turn voice agent that does not drop.</p>
+    <div class="tagrow">
+      <span class="tag"><b>Gemini Live API</b> v1alpha</span>
+      <span class="tag"><b>Deepgram</b> Voice Agent API</span>
+      <span class="tag"><b>PyAudio</b> Threading</span>
+      <span class="tag"><b>Asyncio</b> Queues</span>
+      <span class="tag"><b>Reconnect</b> Backoff</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html">Ahmad-AI · Engineering Log</a>
+      <a href="engineering-log-2.html">Log 02: Multilingual Semantic Search</a>
+      <a href="engineering-log-3.html" class="active">Voice AI · Log 01: Real-Time Audio Transport</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The goal</h2>
+    <p>This first log for Ahmad Voice AI covers real-time speech transport architecture. The objective was straightforward: build a terminal-based voice assistant that listens to hardware microphone input, streams raw PCM audio over WebSockets to a real-time model, receives audio back, and supports continuous multi-turn conversations without dropping connection state.</p>
+    <p>The journey ran in two phases. Phase 1 was a full attempt on <strong>Gemini Live API</strong> — Python's <code>asyncio</code> event loop, PyAudio bindings to PortAudio, the <code>google-genai</code> SDK, and bidirectional WebSockets over TLS. Phase 2 was a migration to <strong>Deepgram's Voice Agent API</strong> after the Gemini transport proved unfixable at the client layer.</p>
+    <p>Six distinct Gemini failures were diagnosed and fixed. The seventh issue was not a bug — it was the wrong provider for the job.</p>
+
+    <h2>Phase 1: Gemini Live API</h2>
+    <p>The system relied on three parallel concurrent loops running inside <code>asyncio</code>:</p>
+    <ul>
+      <li><strong>Mic Capture Task:</strong> Continuously reads 16kHz 16-bit PCM chunks from the hardware soundcard.</li>
+      <li><strong>WebSocket Sender Task:</strong> Pushes microphone chunks to the model, injects boundary markers, and maintains transport frame activity.</li>
+      <li><strong>Speaker Playback Task:</strong> Consumes incoming audio chunks from Gemini, writes them to the speaker buffer, and triggers turn completion signals.</li>
+    </ul>
+    <p>Turn 1 always succeeded instantly. As soon as the model finished speaking and the user attempted Turn 2, the connection terminated with error <code>1011 keepalive ping timeout</code>. Resolving this required tackling six distinct issues.</p>
+
+    <blockquote>
+      <p>The <code>1011</code> was never really a WebSocket-protocol problem. It was an <em>application-layer</em> signal: the client stopped participating in the session for several seconds, and the server's keepalive timer was a proxy for detecting that. Every fix below is ultimately about keeping the application layer active during model speech.</p>
+    </blockquote>
+
+    <h3>Failure modes &amp; debugging log</h3>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 01 · Asyncio Concurrency</div>
+      <h4>Blocking C-Extension Calls Freezing the Event Loop</h4>
+      <p>PyAudio's <code>audio_stream.read()</code> and <code>speaker_stream.write()</code> are synchronous C-extension calls. Running them directly inside an <code>asyncio</code> task froze Python's single thread while waiting for physical soundcard buffer fills or drains. Because the event loop deadlocked during these calls, background WebSocket <code>ping/pong</code> control frames were dropped, prompting the server to drop the transport.</p>
+      <p>The fix was wrapping both hardware read and write calls inside thread executors:</p>
+      <pre><code>data = await loop.run_in_executor(None, audio_stream.read, CHUNK_SIZE, False)
+
+# Speaker side — same problem, same fix
+await loop.run_in_executor(None, speaker_stream.write, part.inline_data.data)</code></pre>
+      <p>Even with the executor, the receive loop could still starve between chunks. A yield before each write gave the WebSocket reader a chance to process control frames:</p>
+      <pre><code>await asyncio.sleep(0)
+await loop.run_in_executor(None, speaker_stream.write, part.inline_data.data)</code></pre>
+      <p class="lesson">Lesson: never execute blocking hardware C-extension calls directly on an asyncio event loop — on either the input or the output side.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 02 · Memory Buffering</div>
+      <h4>Queue Flooding and Socket Saturation</h4>
+      <p>While the model was speaking for several seconds, PyAudio accumulated raw PCM audio chunks in C memory buffers. When the model finished, the loop drained these buffered frames instantly, flooding the WebSocket with dozens of stale audio frames in milliseconds, exceeding write buffer thresholds.</p>
+      <p>The fix was decoupling capture from transmission using an <code>asyncio.Queue()</code> and actively flushing hardware input buffers while the model was speaking:</p>
+      <pre><code>if is_model_speaking:
+    audio_stream.read(audio_stream.get_read_available(), False)
+    await asyncio.sleep(0.05)</code></pre>
+      <p class="lesson">Lesson: clear hardware audio capture buffers during output playback to prevent queue flooding.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 03 · Transport Keepalives</div>
+      <h4>Outbound Transport Silence During Playback</h4>
+      <p>To prevent feedback loops, the client ceased sending microphone frames while the model was speaking. However, outbound silence across even short playback windows violated transport activity requirements, causing the server gateway to assume client disconnection and issue error <code>1011</code>. In practice the drops fired after only 2–3 seconds of send-side quiet, not the multi-second threshold initially assumed.</p>
+      <p>An intermediate fix sent an explicit <code>audio_stream_end</code> marker followed by zero-padded PCM silence frames (<code>b"\x00" * 3200</code>) every 100ms during playback to keep the transport active. But sending silence <em>after</em> the end marker confused the server-side Voice Activity Detection — the model would sit idle waiting for an utterance that never properly terminated.</p>
+      <p>The correct pattern was to send <code>audio_stream_end</code> once, then stop sending audio entirely and simply await the model's turn:</p>
+      <pre><code>if is_model_speaking:
+    # Flush stale queue
+    while not audio_queue.empty():
+        audio_queue.get_nowait()
+
+    if not stream_end_sent:
+        await session.send_realtime_input(audio_stream_end=True)
+        stream_end_sent = True
+
+    # Do NOT send silence. Sleep and yield to the receive loop.
+    await asyncio.sleep(0.02)
+    continue</code></pre>
+      <p class="lesson">Lesson: signal the end of the audio stream explicitly; do not paper over the pause with silence frames, which the VAD will misinterpret.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 04 · API Compatibility</div>
+      <h4>Session Resumption Is Vertex-Only — No Built-In Reconnect</h4>
+      <p>Configuring <code>session_resumption=types.SessionResumptionConfig(transparent=True)</code> caused immediate connection rejection: <code>Session Error: transparent parameter is only supported in Gemini Enterprise Agent Platform mode, not in Gemini Developer API mode.</code></p>
+      <p>This is not a bug in the SDK — the parameter is legitimate, but it is gated to Vertex AI / Gemini Enterprise. On the public Developer API (the mode used when authenticating with a <code>GOOGLE_API_KEY</code>), <em>there is no built-in session resumption at all</em>.</p>
+      <p>The real consequence: preview models will still drop connections intermittently, and the client has no primitive to resume a dropped session. Reconnection has to be implemented at the application level. The parameter was removed from <code>LiveConnectConfig</code> so the session could initialize cleanly on a public API key.</p>
+      <p class="lesson">Lesson: session resumption is unavailable on the Developer API — plan for application-level reconnection from the start.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 05 · Session Lifecycle</div>
+      <h4>Reconnection Must Happen at the <code>main()</code> Level</h4>
+      <p>With no built-in resumption, the client still dropped periodically. The natural impulse was to retry inside <code>ws_sender_task</code>, but the <code>session</code> object returned by <code>client.aio.live.connect()</code> is bound to the dead WebSocket. It cannot be reused. Retrying inside any of the three worker tasks would either leak a dead session or block the surviving tasks.</p>
+      <p>The fix was an outer <code>while True</code> loop wrapping the entire <code>async with client.aio.live.connect(...)</code> block, with exponential backoff. Critically, the inner wait uses <code>asyncio.wait(..., return_when=FIRST_EXCEPTION)</code> instead of <code>asyncio.gather()</code>, so the client can tell <em>which</em> task died:</p>
+      <pre><code>done, pending = await asyncio.wait(
+    [mic_task, send_task, output_task],
+    return_when=asyncio.FIRST_EXCEPTION
+)
+
+for task in pending:
+    task.cancel()
+await asyncio.gather(*pending, return_exceptions=True)
+
+# Mic death = fatal. WS death = retryable.
+for task in done:
+    if task is mic_task:
+        raise task.exception() or Exception("Mic died")</code></pre>
+      <p>Backoff was exponential with a 30-second cap, and reset to 1s on each successful connection to avoid reconnect storms. A session resumption handle was stored and passed back on reconnect so the conversation context survived the drop even without Vertex-grade resumption.</p>
+      <p class="lesson">Lesson: distinguish fatal hardware failures from retryable transport failures, and own the reconnect loop at the top of the program.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 06 · Model Behavior</div>
+      <h4>Internal Reasoning Emitted as Text Instead of Audio</h4>
+      <p>On <code>gemini-2.5-flash-native-audio-preview-12-2025</code>, the model intermittently emitted chain-of-thought text in place of audio — strings like "Formulating Polite Reply" or "Seeking Clarification on Issue" — and then produced no audio at all. The transport sat idle, and the same <code>1011</code> followed.</p>
+      <p>This is a model-side bug, not a transport bug. No client-side change resolves it. Switching back to <code>gemini-3.1-flash-live-preview</code> removed the reasoning-text leak, but did not eliminate the periodic connection drops. The transport layer was now correct, and the model was still the remaining variable.</p>
+      <p class="lesson">Lesson: when a preview model leaks internal reasoning as text and produces no audio, the correct response is to change models — not to chase the resulting transport symptom.</p>
+    </div>
+
+    <h2>Phase 2: The migration to Deepgram</h2>
+    <p>With all six transport bugs fixed, the Gemini client was stable <em>when the connection held</em> — but the connection still dropped periodically, and the Developer API provides no session resumption. Every drop forced a fresh session, and multi-turn context was lost. Patching around this indefinitely was the wrong direction.</p>
+    <p>The decision was to migrate to <strong>Deepgram's Voice Agent API</strong>, which packages speech recognition, LLM orchestration, and neural speech synthesis into a single managed WebSocket session. The provider owns the transport, the keepalive, the turn-boundary signalling, and the reconnection model. The application code stops being a WebSocket engineer and goes back to being a voice agent developer.</p>
+
+    <div class="verdict">
+      <h3>What the migration removed</h3>
+      <ul>
+        <li><strong>Manual reconnect supervisor.</strong> The outer <code>while True</code> loop, exponential backoff, and <code>asyncio.wait(FIRST_EXCEPTION)</code> pattern were deleted. The SDK owns the session lifecycle.</li>
+        <li><strong><code>audio_stream_end</code> bookkeeping.</strong> Turn-boundary signals are handled server-side by the Voice Agent API. No <code>stream_end_sent</code> flag, no VAD confusion.</li>
+        <li><strong>Keepalive engineering.</strong> No silence frames, no ping/pong tuning, no application-layer participation timers to satisfy. The 1011 class of failure is architecturally absent.</li>
+        <li><strong>Manual asyncio audio pipeline.</strong> The three-task architecture (mic, sender, speaker) collapsed into a single threaded sender feeding a managed connection that emits events.</li>
+      </ul>
+    </div>
+
+    <h3>Final architecture</h3>
+    <p>The shipped client runs a single Deepgram WebSocket session configured as a JSON <code>Settings</code> message on connect. That message declares the full agent pipeline in one payload:</p>
+    <ul>
+      <li><strong>Listen provider:</strong> Deepgram Nova-3 for streaming speech recognition.</li>
+      <li><strong>Think provider:</strong> GPT-4o-mini for reasoning and response generation.</li>
+      <li><strong>Speak provider:</strong> Deepgram Aura-2 for neural speech synthesis.</li>
+      <li><strong>Audio:</strong> linear16, 16kHz input, 24kHz output.</li>
+      <li><strong>Greeting:</strong> A first-turn message the agent speaks immediately on connect.</li>
+    </ul>
+    <p>Microphone frames are read on a background thread and pushed with <code>connection.send_media()</code>. Agent audio arrives as binary WebSocket frames and is written directly to the speaker. Text events (<code>ConversationText</code>, <code>UserStartedSpeaking</code>, <code>AgentThinking</code>, <code>AgentStartedSpeaking</code>, <code>AgentAudioDone</code>, <code>SettingsApplied</code>) are logged to the terminal for observability.</p>
+
+    <h3>Deepgram-specific issues resolved</h3>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 07 · Message Parsing</div>
+      <h4><code>UNPARSABLE_CLIENT_MESSAGE</code> on the Greeting Field</h4>
+      <p>The first Settings message was rejected with <code>Error parsing client message. Check the greeting field against the API spec.</code> Two mistakes stacked here. First, the <code>greeting</code> field was placed at the top level of the Settings payload rather than inside the <code>agent</code> object. Second, the typed SDK classes in <code>deepgram-sdk 7.10.0</code> produce a payload the server rejects when the field shape is wrong.</p>
+      <p>The fix was to place <code>greeting</code> inside <code>AgentV1SettingsAgent</code> and send via the typed <code>send_settings()</code> method, which the SDK expects:</p>
+      <pre><code>agent=AgentV1SettingsAgent(
+    language="en",
+    listen=...,
+    think=...,
+    speak=...,
+    greeting="Hello! How can I help you today?",
+)</code></pre>
+      <p class="lesson">Lesson: the Deepgram server uses <code>deny_unknown_fields</code>. Any field placed at the wrong nesting level produces <code>UNPARSABLE_CLIENT_MESSAGE</code> — read the rejection as a schema error, not a network error.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug 08 · SDK Surface</div>
+      <h4>No Generic <code>send()</code> on <code>V1SocketClient</code></h4>
+      <p>An attempt to bypass the typed classes by sending raw JSON via <code>connection.send(json.dumps(settings))</code> failed with <code>AttributeError: 'V1SocketClient' object has no attribute 'send'. Did you mean: '_send'?</code></p>
+      <p>The Deepgram Python SDK exposes only typed methods on the socket client — <code>send_settings()</code>, <code>send_media()</code>, <code>send_keep_alive()</code>, and so on. There is no generic send. The fix was to revert to the typed path and correct the field nesting, which resolved the original parse error as well.</p>
+      <p class="lesson">Lesson: the Deepgram SDK is typed by design. Work with the provided methods rather than trying to hand-roll the payload.</p>
+    </div>
+
+    <h2>Where it stands now</h2>
+    <p>The voice client ships as <strong>Ahmad Voice AI</strong> on the Deepgram Voice Agent API. It handles continuous multi-turn conversation over a single managed WebSocket session, with no manual keepalive, no reconnect loop, and no transport-level engineering left in the application code. The free tier on Deepgram covers roughly 40+ hours of this workload, which was the deciding factor over Gemini's limited preview quota.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">&lt;500ms</div><div class="lbl">Voice-to-Voice Latency</div></div>
+      <div class="metric"><div class="num">16 kHz</div><div class="lbl">Input PCM Sample Rate</div></div>
+      <div class="metric"><div class="num">24 kHz</div><div class="lbl">Output PCM Sample Rate</div></div>
+      <div class="metric"><div class="num">0</div><div class="lbl">Client-Side Keepalive Timers</div></div>
+    </div>
+
+    <h2>Engineering Summary</h2>
+    <p>Real-time speech pipelines require treating transport networks and hardware I/O as distinct systems. Delegating blocking calls to thread pools on both the input and output sides, flushing stale hardware buffers during speaker output, and owning the reconnect loop at the top of the program are all correct patterns — and all of them were necessary to get a stable multi-turn session out of Gemini Live.</p>
+    <p>But the final lesson is a different one. When the transport layer is correct and the connection still drops, the right move is not to keep patching the client. It is to ask whether the provider's architecture is the right fit for the workload. Deepgram's Voice Agent API absorbs the entire class of failure that took six bugs to partially mitigate, because the provider treats transport reliability as its problem, not the application's.</p>
+    <p>The deeper takeaway: <code>1011 keepalive ping timeout</code> is almost never about the WebSocket ping mechanism itself. It is the server's proxy signal for "the application stopped participating." Fixing the application layer fixes the transport — and choosing the right provider removes the need to fix it at all.</p>
+
+    <hr>
+    <p style="font-size:14px;">Want to review the search architecture? <a href="engineering-log-2.html" style="color:var(--amber-soft);">Read Log 02 &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and real-time voice architectures — and happy to walk through any of the systems above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
