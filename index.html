@@ -229,6 +229,7 @@
       <a href="#systems">Systems Built</a>
       <a href="engineering-log.html">Engineering Log</a>
             <a href="engineering-log-3.html">Voice AI</a>
+            <a href="engineering-log-4.html">Demand Forecasting Engine</a>
       <a href="#contact">Contact</a>
     </div>
   </div>
@@ -312,7 +313,17 @@
           <a href="https://groweasycloud.github.io/groweasy-site" target="_blank" rel="noopener noreferrer">Visit Website &rarr;</a>
         </div>
       </div>
-
+            <div class="card">
+        <span class="stamp dev">Pilot validated · Case study + Eng log</span>
+        <h3>Demand Forecasting Engine</h3>
+        <img class="card-img" src="assets/forecasting-data-quality.png" alt="Demand Forecasting Engine — data quality report showing 84,741 clean order lines, 872 customers, 4,307 SKUs">
+        <p><em>Multi-model demand forecasting for wholesale distribution.</em> Built on 84,741 real ERP order lines, 872 customers, and 4,307 SKUs. Three models (Naive, Seasonal Naive, ETS) selected per SKU via expanding-window backtesting. Reliability tiers, sensitivity checks, forecast-vs-trend sanity warnings, and an audit-ready Excel workbook with live formulas. Validated honestly against a 12-month holdout: the ETS model beat the naive baseline on 58% of pairs but lost 3× on volume-weighted WAPE because it extrapolated lumpy B2B order spikes as trend — and the app flagged every one of those SKUs as Low reliability with a "Validate with Customer" action before anyone acted on a number.</p>
+        <div class="stackrow"><span>Python</span><span>Pandas</span><span>Statsmodels</span><span>Streamlit</span><span>openpyxl</span><span>pytest</span></div>
+        <div class="card-links">
+          <a href="engineering-log-4.html">Read Engineering Log &rarr;</a>
+          <a href="case-study-forecasting.html">Case Study &rarr;</a>
+        </div>
+      </div>
       <div class="card">
         <span class="stamp open">Open Source & Live</span>
         <h3>Serverless Enterprise Warehouse Management System</h3>
