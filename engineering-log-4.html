@@ -144,7 +144,7 @@
   <div class="wrap">
     <span>DOCUMENT: <b>Demand Forecasting Engine · Log 04</b></span>
     <span>SUBJECT: <b>The 0.27% Finding</b></span>
-    <span>STATUS: <b>Shipped · Pilot validated on real ERP data</b></span>
+    <span>STATUS: <b>Shipped · Pilot validated · v2 replenishment worklist</b></span>
   </div>
 </div>
 
@@ -177,7 +177,7 @@
       <span class="tag"><b>Pandas</b> + NumPy</span>
       <span class="tag"><b>Streamlit</b> UI</span>
       <span class="tag"><b>openpyxl</b> Workbook</span>
-      <span class="tag"><b>pytest</b> 38 tests</span>
+      <span class="tag"><b>pytest</b> 46 tests</span>
     </div>
     <div class="chapter-nav">
       <a href="engineering-log.html">Ahmad-AI · Engineering Log</a>
@@ -515,11 +515,101 @@ YoY_%_Live                =IF(O2&lt;=0, NA(), (M2 - O2) / ABS(O2))
     <hr>
     <p style="font-size:14px;">Want to see the voice agent log? <a href="engineering-log-3.html" style="color:var(--amber-soft);">Read Voice AI · Log 03 &rarr;</a></p>
     <p style="font-size:14px;">Full case study: <a href="case-study-forecasting.html" style="color:var(--amber-soft);">Demand Forecasting Engine — Case Study &rarr;</a></p>
+    <hr>
 
+    <h2>13. What v2 delivered — the replenishment worklist</h2>
+
+    <p>v1 answered the question "what will demand be?" and was honest that the answer was usually "we don't know." That is a useful tool. It is not a <em>complete</em> tool. A supply chain lead cannot take "we don't know" to a customer. They need a next action.</p>
+
+    <p>v2 delivers the next action. It takes the forecast v1 already produced, cross-references it against on-hand inventory and supplier lead time, and produces a <strong>replenishment worklist</strong> — a prioritized queue of SKUs, ranked by urgency, with a specific quantity to order once the customer confirms.</p>
+
+    <blockquote>
+      <p>A tool that says "Validate" eighty-five times isn't a tool. It's a warning label. The worklist turns the warning label into an action queue.</p>
+    </blockquote>
+
+    <h3>13.1 The design tension</h3>
+
+    <p>The first version of the replenishment layer produced this on the pilot portfolio: 85 SKUs, every one of them receiving <code>action = "Validate with Customer"</code>, and every one of them with <code>recommended_order_qty = 0</code>. The trust rule was working correctly — 84 of the 85 SKUs are Low reliability, and the one Medium-reliability SKU had a Review trend-check. Both are legitimate blocks.</p>
+
+    <p>But a supply chain lead cannot act on "validate 85 things." That's the same as "do nothing." The trust rule was doing its job. The <em>output</em> was failing the user.</p>
+
+    <h3>13.2 The resolution: two order numbers</h3>
+
+    <p>The fix was not to loosen the trust rule. It was to produce two numbers instead of one:</p>
+
+    <ul>
+      <li><strong><code>recommended_order_qty</code></strong> — the dispatchable quantity. Zero when the trust rule blocks. This is what the app would order autonomously.</li>
+      <li><strong><code>recommended_order_qty_if_validated</code></strong> — the quantity to order <em>once the customer confirms the forecast</em>. This is always computed, regardless of reliability tier.</li>
+    </ul>
+
+    <p>The second number is the product. It's what the supply chain lead walks into the customer call with. The first number is the guardrail. Together they turn "we don't know" into "call this customer today and ask about 9,869 units."</p>
+
+    <h3>13.3 The priority rank</h3>
+
+    <p>Every SKU now gets a <code>validation_urgency</code> bucket derived from days of cover versus lead time:</p>
+
+    <table>
+      <tr><th>Urgency</th><th>Rule</th><th>Meaning</th></tr>
+      <tr><td><strong>Call today</strong></td><td>days of cover &lt; lead time</td><td>Cannot recover if the call waits.</td></tr>
+      <tr><td><strong>Call this week</strong></td><td>days of cover &lt; 1.5 × lead time</td><td>Buffer is thin but recoverable.</td></tr>
+      <tr><td><strong>Monitor</strong></td><td>days of cover &lt; lead time + review period</td><td>Inside the reorder window; watch next cycle.</td></tr>
+      <tr><td><strong>No action</strong></td><td>everything else</td><td>Cover is comfortably above the reorder window.</td></tr>
+    </table>
+
+    <p>SKUs are then ranked 1..N: first by urgency bucket, then by days of cover ascending within each bucket. Rank 1 is always the SKU with the smallest margin between its current cover and its lead time.</p>
+
+    <h3>13.4 The pilot output</h3>
+
+    <p>On the pilot portfolio, the worklist produced this:</p>
+
+    <table>
+      <tr><th>Rank</th><th>SKU</th><th>Supplier</th><th>Urgency</th><th>Days of cover</th><th>Order if validated</th></tr>
+      <tr><td>1</td><td><code>R400-SOM-BDFEGA</code></td><td>China</td><td>Call today</td><td>0.1</td><td>9,869</td></tr>
+      <tr><td>2</td><td><code>WALL-CHARGR-25W</code></td><td>Boss</td><td>Call today</td><td>0.2</td><td>9,198</td></tr>
+      <tr><td>3</td><td><code>XT2311-3M128BKU</code></td><td>Xiomi</td><td>Call today</td><td>7.7</td><td>439</td></tr>
+      <tr><td>4</td><td><code>IPAD9-64SIL-WIF</code></td><td>Apple</td><td>Call today</td><td>17.1</td><td>50</td></tr>
+      <tr><td>5</td><td><code>R400-SBUDSFEBKU</code></td><td>China</td><td>Call today</td><td>22.0</td><td>50</td></tr>
+      <tr><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+    </table>
+
+    <p>The top of the list is <code>R400-SOM-BDFEGA</code>, with <strong>2.4 hours of cover</strong> against a 25-day lead time. Rank 2 is <code>WALL-CHARGR-25W</code> — the SKU from v1 — with <strong>5.3 hours of cover</strong> and a Medium reliability tier whose decision-layer verdict was <em>"Validate with Customer, driven by OMNI CHANNEL C/O AMAZON US, 100% share."</em> The app will not dispatch an order for either. It <em>will</em> tell the analyst to call China about 9,869 units and Boss about 9,198 units, in that order, before lunch.</p>
+
+    <h3>13.5 The wall charger, revisited</h3>
+
+    <p>v1 flagged <code>WALL-CHARGR-25W</code> for three independent reasons: Medium reliability, a <code>Review</code> trend-check, and a decision-layer verdict starting with "Validate." Each was sufficient on its own. The app zeroed the order and told the analyst to call the customer.</p>
+
+    <p>v2 keeps the same block, but adds the number the analyst takes into the call:</p>
+
+    <blockquote>
+      <p><strong>Call today — validate &amp; order.</strong> Days of cover 0.2. Stockout risk High. Per policy no order is dispatched until the signal is validated with the customer. <em>If the customer confirms, order 9,198 units from Boss.</em></p>
+    </blockquote>
+
+    <p>That final sentence is the whole difference between v1 and v2. v1 said <em>"don't trust this forecast."</em> v2 says <em>"don't trust this forecast, and here is exactly what to do when you've verified it."</em> The second sentence is what a supply chain lead needs before the customer picks up the phone.</p>
+
+    <h3>13.6 What v2 does not claim</h3>
+
+    <p>Two honest boundaries on this release:</p>
+
+    <ul>
+      <li><strong>The pilot's on-hand inventory is a synthesized snapshot.</strong> The distributor's ERP export did not include a live inventory feed, so the on-hand numbers used to demonstrate v2 are illustrative. The logic is production-ready; the specific quantities in the pilot output would change with a real inventory source. This is stated in the workbook's <code>Assumptions_Inventory</code> sheet and in the <code>README</code>.</li>
+      <li><strong>Zero SKUs cleared the autonomous-dispatch gate on this portfolio.</strong> That is the correct output — the data does not support autonomous replenishment for any customer × SKU pair in the pilot. The autonomous branch is unit-tested (<code>test_high_tier_high_risk_dispatches_order_with_moq_floor</code>) but was not exercised on real pilot data. This is not a bug in the trust rule; it is the trust rule working.</li>
+    </ul>
+
+    <h3>13.7 Engineering summary</h3>
+
+    <p>v1 asked "what will demand be?" and was honest that the answer was usually "we don't know." v2 asks "so what do we do about it?" and produces a prioritized queue of answers that a supply chain analyst can act on this morning. The trust rule is preserved, the guardrail is unchanged, and the output is transformed from a warning into a worklist.</p>
+
+    <p>The lesson is not that the first version was wrong. It's that <em>the trust rule without a next action is a monologue, not a conversation</em>. A forecasting tool that tells you not to trust the number, and nothing else, is a tool that gets closed after the first demo. A forecasting tool that tells you not to trust the number, and then hands you the exact call to make, is a tool that gets used every Monday morning.</p>
+
+    <p>That distinction is v2.</p>
+
+    <hr>
+
+    <p><strong>Tests:</strong> 46 passing. <strong>New this release:</strong> <code>src/inventory_decision.py</code>, the Replenishment worklist tab, the <code>Replenishment_Worklist</code> and <code>Call_Today</code> Excel sheets, and 8 new pytest cases covering the trust-rule branches individually.</p>
+ 
   </div>
 </section>
-
-<footer id="contact">
+    <footer id="contact">
   <div class="wrap">
     <div class="foot-top">
       <div class="foot-cta">

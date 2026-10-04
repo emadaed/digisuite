@@ -3,338 +3,377 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Engineering Log 4 — Demand Forecasting Engine</title>
-<link rel="stylesheet" href="styles.css">
-</head>
-<body class="dark">
+<title>Demand Forecasting Engine — Case Study | Muhammad Ahmad</title>
+<meta name="description" content="A case study on a multi-model demand forecasting engine for wholesale distribution. Built on 84,741 real ERP order lines, 872 customers, 4,307 SKUs. The honest result: the naive baseline beat ETS on volume-weighted WAPE, and the app flagged every SKU it should not have trusted.">
+<meta name="keywords" content="Demand Forecasting, Case Study, Supply Chain Analytics, WAPE, ETS, Reliability Tiers, Replenishment, Python, Excel">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/case-study-forecasting.html">
 
-<header class="site-header">
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="index.html#systems">Systems</a>
-    <a href="engineering-log-3.html">Log 3 — Voice AI</a>
-  </nav>
+<meta property="og:type" content="article">
+<meta property="og:title" content="Demand Forecasting Engine — Case Study">
+<meta property="og:description" content="0.27% of customer × SKU pairs are forecastable. Here's what the app did with the other 99.73%.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/case-study-forecasting.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Demand Forecasting Engine — Case Study",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/case-study-forecasting.html",
+  "about": ["Demand Forecasting", "Supply Chain Analytics", "WAPE", "ETS", "Replenishment"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:900px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{ margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel); border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px; }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{ background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px; overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft); }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+  .article-body table{ width:100%; border-collapse:collapse; margin:0 0 24px; font-size:15px; }
+  .article-body th, .article-body td{ text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .article-body th{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.05em; text-transform:uppercase; font-weight:500; }
+  .article-body td strong{ color:var(--text); }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Demand Forecasting Engine · Case Study</b></span>
+    <span>SUBJECT: <b>The 0.27% Finding</b></span>
+    <span>STATUS: <b>Shipped · Validated · v2 replenishment worklist</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Ahmad-AI · Log</a>
+      <a href="engineering-log-2.html">Log 02</a>
+      <a href="engineering-log-3.html">Voice AI · Log 03</a>
+      <a href="engineering-log-4.html">Forecasting · Log 04</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Case Study</span>
+    <span class="eyebrow">Demand Forecasting Engine</span>
+    <h1>The 0.27% Finding: A Demand Forecasting Engine That Told Me Not to Trust It</h1>
+    <p class="lede">Built on 84,741 real ERP order lines, 872 customers, and 4,307 SKUs. Validated against a 12-month holdout. The ETS model lost to a naive baseline on the SKUs that carry the business — and the app flagged every one of them before I acted on a single number.</p>
+    <div class="tagrow">
+      <span class="tag"><b>Supply Chain</b> Analytics</span>
+      <span class="tag"><b>Demand</b> Forecasting</span>
+      <span class="tag"><b>Python</b> · Pandas · Statsmodels</span>
+      <span class="tag"><b>Excel</b> decision workbook</span>
+      <span class="tag"><b>Replenishment</b> worklist</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log-4.html">Read the engineering log &rarr;</a>
+      <a href="https://github.com/emadaed/demand-forecasting-mvp" target="_blank" rel="noopener noreferrer">Source on GitHub &rarr;</a>
+    </div>
+  </div>
 </header>
 
-<main>
-
-<article class="log">
-
-<h1>Engineering Log 4 — Demand Forecasting Engine</h1>
-<p class="subtitle">A multi-model demand forecasting pipeline for wholesale distribution, built to be honest about what it can and cannot forecast.</p>
-
-<hr>
-
-<h2>1. The goal</h2>
-
-<p>A wholesale distributor of consumer electronics across Latin America was making stocking decisions on 4,307 SKUs using a spreadsheet and intuition. Their ERP held 4.5 years of order history. Nobody had ever asked the data a simple question:</p>
-
-<p><strong>Which SKUs can actually be forecast, and which ones can't?</strong></p>
-
-<p>That is the entire brief. Not "build a forecasting model." Build a tool that tells an analyst which SKUs they can trust a forecast on, and which ones need a phone call to the customer instead.</p>
-
-<hr>
-
-<h2>2. The data</h2>
-
-<p>Real ERP export. Not synthetic, not scraped, not a Kaggle competition. Real order lines with real mess in them.</p>
-
-<table>
-  <tr><th>Metric</th><th>Value</th></tr>
-  <tr><td>Raw order lines</td><td>~290,000</td></tr>
-  <tr><td>Clean order lines after filtering</td><td>84,741</td></tr>
-  <tr><td>Distinct customers</td><td>872</td></tr>
-  <tr><td>Distinct SKUs</td><td>4,307</td></tr>
-  <tr><td>Date range</td><td>2023-01-02 to 2026-08-31</td></tr>
-  <tr><td>Total net units</td><td>~5.78M</td></tr>
-</table>
-
-<p><img src="assets/forecasting-data-quality.png" alt="Data quality report showing 10,269 rows, 13 customers, 85 SKUs, 0 invalid, 0 duplicates on the pilot training set"></p>
-
-<hr>
-
-<h2>3. Cleaning — what the first hour actually looked like</h2>
-
-<p>Roughly 21% of raw rows were <em>not sales</em>. They were discount adjustments, returns, and cancellations posted as negative-quantity transactions. If you naively sum the quantity column, you get a number that looks like demand but isn't. Every downstream forecast is wrong if this step is wrong.</p>
-
-<p>Before any model sees the data, the pipeline does three things:</p>
-
-<ol>
-  <li><strong>Separates gross demand from returns.</strong> Net demand (gross minus returns) is the forecast target. Gross demand and returns remain visible for sensitivity analysis.</li>
-  <li><strong>Removes exact duplicates.</strong> ERP exports frequently double-post. Detected and removed.</li>
-  <li><strong>Establishes a completeness cutoff.</strong> The last month in the data is often partial. The pipeline uses the last <em>complete</em> month as the forecasting anchor. Sounds trivial. Isn't. Forecasting off a partial month produces a fake trend and a fake seasonality signal, and both errors propagate into every SKU.</li>
-</ol>
-
-<p>After cleaning, the app reports its own data quality: rows, customers, SKUs, invalid rows removed, exact duplicates removed, and a flag for any rows above the 99th percentile of absolute quantity. On the pilot training set, the app retained <strong>103 outlier rows for investigation rather than silently dropping them.</strong> Silent outlier removal is how forecasters lie to themselves.</p>
-
-<hr>
-
-<h2>4. The 0.27% finding</h2>
-
-<p>Of the 872 customers and 4,307 SKUs, roughly 34,031 customer × SKU pairs ever had positive demand. The question is: how many have enough <em>monthly</em> history to forecast?</p>
-
-<table>
-  <tr><th>Filter</th><th>Pairs remaining</th><th>% of total</th></tr>
-  <tr><td>Any positive demand ever</td><td>34,031</td><td>100%</td></tr>
-  <tr><td>At least 12 months of monthly history</td><td>92</td><td><strong>0.27%</strong></td></tr>
-  <tr><td>At least 24 months of monthly history</td><td>5</td><td><strong>0.015%</strong></td></tr>
-</table>
-
-<p>And on the SKU side: <strong>79% of SKUs had fewer than 6 months of activity.</strong></p>
-
-<p>Read that again. Less than one-third of one percent of customer × SKU pairs have enough monthly history for a classical time-series model to even attempt a forecast. Fifteen thousandths of a percent have enough history for a model to estimate seasonality with confidence.</p>
-
-<p>This is not an anomaly. <strong>This is what wholesale distribution actually looks like.</strong> A reseller orders a bulk shipment in March, another in July, nothing for four months, then a spike when a new SKU launches. That is not monthly demand. That is a reorder-probability problem wearing a time-series costume.</p>
-
-<hr>
-
-<h2>5. Building the engine</h2>
-
-<p>Three models:</p>
-
-<ul>
-  <li><strong>Naive</strong> — repeat last year's monthly demand.</li>
-  <li><strong>Seasonal Naive</strong> — repeat the same month last year.</li>
-  <li><strong>ETS</strong> — exponential smoothing with additive trend and seasonality.</li>
-</ul>
-
-<p>Selection is per SKU, via expanding-window cross-validation. Not a global model. If Seasonal Naive wins on one SKU and ETS wins on another, so be it.</p>
-
-<p>The pipeline is Pandas + Statsmodels + a custom reliability layer. The UI is Streamlit. The output is a decision workbook in Excel. <strong>38 pytest tests</strong> cover the pipeline end-to-end.</p>
-
-<hr>
-
-<h2>6. The reliability and sensitivity layer</h2>
-
-<p>A forecast number alone is not a decision. So the app produces, for every forecastable SKU, a stack of diagnostics that tell the analyst how much weight to put on the number. These turned out to be the most useful parts of the whole system.</p>
-
-<h3>6.1 Reliability tiers with written reasons</h3>
-
-<p>Every SKU gets High / Medium / Low, plus a plain-English reason. Examples from the pilot:</p>
-
-<ul>
-  <li><em>"Best model WAPE is 67.6% (50–100%)."</em> → Medium</li>
-  <li><em>"Best model WAPE is 178.7% (≥100%)."</em> → Low</li>
-  <li><em>"History is only 16 months (&lt;24)."</em> → Low</li>
-  <li><em>"Demand is intermittent (≥40% zero-demand months)."</em> → Low</li>
-</ul>
-
-<p>In the pilot, <strong>84 of 92 pairs received Low reliability.</strong> That's not a bug. That's the app correctly reporting that most of the data does not support a confident monthly forecast.</p>
-
-<h3>6.2 Model separation</h3>
-
-<p>For each SKU, the app reports the relative WAPE advantage the selected model has over the next-best model. On <code>WALL-CHARGR-25W</code>, the selected model (ETS) has a <strong>13.0% relative WAPE advantage</strong> over the runner-up (Naive). That's meaningful but not overwhelming — and the app says so. A 13% advantage is worth selecting ETS, but it's not worth betting the warehouse on ETS alone. That's why the reliability tier is Medium, not High.</p>
-
-<h3>6.3 Selection robustness — outlier and net-vs-gross sensitivity</h3>
-
-<p>For every SKU, the app re-runs model selection under three conditions:</p>
-
-<ol>
-  <li><strong>Base model</strong> — as-is.</li>
-  <li><strong>Outliers capped</strong> — flagged outlier months (calendar-month median × 3) are winsorized and selection is rerun.</li>
-  <li><strong>Gross demand</strong> — the model is refit on gross demand instead of net demand (returns not subtracted).</li>
-</ol>
-
-<p>If the selected model changes under any of these, the app reports: <em>"Selected model changes when SKU-specific outliers are capped."</em></p>
-
-<p>For <code>WALL-CHARGR-25W</code>:</p>
-
-<table>
-  <tr><th>Check</th><th>Result</th></tr>
-  <tr><td>Flagged outlier months</td><td>2025-05, 2025-07</td></tr>
-  <tr><td>Units in flagged months</td><td>9,416</td></tr>
-  <tr><td>Base model</td><td>ETS</td></tr>
-  <tr><td>Without outliers</td><td>ETS</td></tr>
-  <tr><td>Gross demand</td><td>ETS</td></tr>
-</table>
-
-<p>All three re-runs selected ETS. The model choice is robust to those sensitivities on this SKU. That means the ETS selection is not an artifact of two crazy months. It's the model genuinely preferring trend-following on this series.</p>
-
-<h3>6.4 Forecast-vs-trend sanity warnings</h3>
-
-<p>Independent of backtest metrics, the app compares the forecast against the last 12 months of actuals and fires warnings for:</p>
-
-<ul>
-  <li><strong>Cliff check</strong> — forecast is ≥90% below the last 12 months.</li>
-  <li><strong>Spike check</strong> — forecast is ≥100% above the last 12 months.</li>
-  <li><strong>Flat-vs-trend</strong> — forecast is flat but the observed trend is growing or declining.</li>
-  <li><strong>Model-horizon disagreement</strong> — 6-month and 12-month backtests select different models.</li>
-</ul>
-
-<p>On <code>WALL-CHARGR-25W</code>, two warnings fired:</p>
-
-<ul>
-  <li><em>"Forecast grows +57.1% vs last 12 months (unusually high)."</em></li>
-  <li><em>"6-month backtest selects Naive, while the 12-month selection is ETS; inspect both because the forecast horizon is 12 months."</em></li>
-</ul>
-
-<p>Both warnings were correct. The model over-forecast by 155% on the holdout. The app flagged it before the analyst ever looked at the number.</p>
-
-<hr>
-
-<h2>7. The validation — the finding that changed the story</h2>
-
-<p>I tested the app on 92 forecastable customer × SKU pairs. Training window: 2023-01 to 2025-08. Holdout: 2025-09 to 2026-08. Twelve months held back, never seen by the model.</p>
-
-<pre><code>Pairs attempted:             92
-Pairs with a forecast:       57
-Pairs with non-zero holdout: 31
-Model beats naive on:        18 of 31  → 58.1% win rate
-Median |% error| forecast:   208.4%
-Median |% error| naive:      1900.0%
-Volume-weighted WAPE (forecast): 178.7%
-Volume-weighted WAPE (naive):    65.5%   ← naive is 3× better on volume
-</code></pre>
-
-<p>Two readings, both true:</p>
-
-<p><strong>Reading 1 (favourable):</strong> the model beat naive on 58% of pairs. Median error dropped from 1900% to 208%. That's a 9× improvement.</p>
-
-<p><strong>Reading 2 (honest, and this is the true one):</strong> volume-weighted WAPE — which is what actually matters for stock decisions — is <strong>178.7% for the model vs 65.5% for naive.</strong> On the SKUs that carry the business, the model is 3× worse than "just repeat last year."</p>
-
-<p>The 58% win rate counts pairs equally, including 20-unit tail SKUs. The volume-weighted number counts the big SKUs, which is where stockouts and overstock actually cost money.</p>
-
-<h3>7.1 What went wrong</h3>
-
-<p>Look at the top 10 pairs by holdout volume. Every single one is <code>OMNI CHANNEL C/O AMAZON US</code>. That's the concentration problem.</p>
-
-<p>For the top SKU, <code>WALL-CHARGR-25W</code>:</p>
-
-<table>
-  <tr><th>Quantity</th><th>Value</th></tr>
-  <tr><td>Forecast (ETS)</td><td>58,148</td></tr>
-  <tr><td>Actual holdout</td><td>22,791</td></tr>
-  <tr><td>Naive (last 12m of training)</td><td>37,021</td></tr>
-</table>
-
-<p>The ETS model saw growth in the training window, extrapolated it, and forecast 58k. Actual was 22.8k — a <strong>155% over-forecast.</strong> Naive said 37k — a 62% over-forecast. Both wrong, both over. Naive was closer.</p>
-
-<p>Same pattern on the next SKU. <code>R400-SOM-BDFEGA</code>: forecast 52k, actual 17k, naive 11k. Both over, naive closer.</p>
-
-<p><strong>Why is naive closer than ETS here?</strong> Because ETS with additive trend on lumpy wholesale data extrapolates noise. When the training window contains a big spike (a bulk Amazon order, a launch stocking, a promotion), ETS thinks that spike <em>is the trend</em> and projects it forward. Naive just says "repeat last year" and stays grounded.</p>
-
-<p>This is a real, documented, common failure mode of trend-following models on wholesale data. It is not a bug in the code. It is the physics of the problem.</p>
-
-<h3>7.2 What the app got right</h3>
-
-<p>The app correctly flagged the SKUs where the model would fail. It did not confidently produce a wrong number. It produced a number <em>and</em> a warning.</p>
-
-<ul>
-  <li>On <code>WALL-CHARGR-25W</code>: <strong>Reliability: Medium</strong>, <strong>Selected model: ETS</strong>, <strong>Action: Validate with Customer</strong>, plus the two sanity warnings above.</li>
-  <li>Across the portfolio: <strong>84 of 92 pairs assigned Low reliability</strong>, most with the reason "Best model WAPE is ≥100%" or "History is only N months (&lt;24)."</li>
-  <li>Action label on every one of those pairs: <strong>"Validate with Customer."</strong></li>
-</ul>
-
-<p><strong>The most important output of this forecasting app was telling the user not to trust the forecast without validation.</strong></p>
-
-<hr>
-
-<h2>8. Executive decision summary — the business view</h2>
-
-<p>The top of the app is a one-screen view for a supply chain lead:</p>
-
-<table>
-  <tr><th>Action</th><th>Count (pilot)</th></tr>
-  <tr><td>Validate</td><td>85</td></tr>
-  <tr><td>Increase Stocking</td><td>0</td></tr>
-  <tr><td>Evaluate for Reduction</td><td>0</td></tr>
-  <tr><td>Maintain Current Stocking</td><td>0</td></tr>
-</table>
-
-<p>Eighty-five SKUs need a customer conversation before anyone orders anything. Zero SKUs get an automatic "increase stocking" or "reduce stocking" recommendation. That is the correct output for this dataset — the app is telling the business that almost nothing in this portfolio is forecastable enough to act on without human validation.</p>
-
-<p>The app is also explicit about what it <em>cannot</em> say: <em>"No SKU currently receives Evaluate for Reduction. This is a demand signal only; physical overstock cannot be asserted without on-hand inventory."</em> That is a boundary, and it's stated, not hidden.</p>
-
-<hr>
-
-<h2>9. The workbook — Excel as a live decision layer</h2>
-
-<p>The output is not a CSV dump. It's a decision workbook with live formulas, a pivot-table guide, and a documented methodology sheet.</p>
-
-<h3>9.1 Annualization test with data cut at June</h3>
-
-<p>Instead of blindly annualizing YTD × (12 / months_elapsed), the app shows what the annualized number <em>would have been</em> at the June cutoff, side by side with the latest.</p>
-
-<table>
-  <tr><th>Customer</th><th>Annualized (latest)</th><th>Annualized (June)</th><th>Change %</th></tr>
-  <tr><td>OMNI CHANNEL C/O AMAZON US</td><td>122,322</td><td>105,918</td><td>+15.5%</td></tr>
-  <tr><td>Telispire PCS/ZEFCOM</td><td>691.5</td><td>912</td><td>-24.2%</td></tr>
-  <tr><td>Horizon Shop</td><td>391.5</td><td>486</td><td>-19.4%</td></tr>
-  <tr><td>C1 BM / 1 Communication ltd</td><td>309</td><td>412</td><td>-25.0%</td></tr>
-</table>
-
-<p>Those swings are a signal, not noise. They mean the annualized answer depends heavily on which cutoff you pick, which means neither number should be treated as final.</p>
-
-<h3>9.2 Customer × SKU YTD with live formulas</h3>
-
-<p>The workbook ships with live formulas, not just static values. The <code>Customer_SKU_YTD</code> sheet computes:</p>
-
-<pre><code>YTD_Quantity_Live         =SUMIFS(tblMonthlyDemand[quantity], tblMonthlyDemand[customer_id], A2, tblMonthlyDemand[sku], B2, tblMonthlyDemand[year], YEAR(G2), tblMonthlyDemand[month], "&lt;="&amp;G2)
-Annualized_Quantity_Live  =IF(M2=0, 0, M2 / MONTH(G2) * 12)
-Prior_Full_Year_Live      =SUMIFS(..., tblMonthlyDemand[year], YEAR(G2) - 1)
-YoY_%_Live                =IF(O2&lt;=0, NA(), (M2 - O2) / ABS(O2))
-</code></pre>
-
-<p>Every downstream metric recalculates when the underlying <code>tblMonthlyDemand</code> table is refreshed. This is not "Excel as a viewer." It's "Excel as a live calculation layer with documented methodology." A <code>Formula_Guide</code> sheet lists the canonical formula for every metric so an auditor can trace any number back to source.</p>
-
-<h3>9.3 Exceptions</h3>
-
-<p>Every month × SKU is screened for spikes (≥5× same-calendar-month median) and drops (≤25% of same-calendar-month median), with intermittent demand handled separately (spike/drop rules suppressed when ≥40% of months are zero). The <code>Exceptions</code> sheet is the analyst's work queue. Hundreds of exceptions across the portfolio. That is the correct output — the app's job is not to hide the mess, it's to make the mess legible.</p>
-
-<hr>
-
-<h2>10. Bugs found along the way</h2>
-
-<p>Eight bugs were worth writing down. Each one cost more than an hour.</p>
-
-<ol>
-  <li><strong>Excel live-formula concatenation bug.</strong> A formula referenced the wrong cell range and produced "142" instead of "N2" when the workbook was programmatically regenerated. Cause: string concatenation of an integer column label. Fix: cast to string explicitly before concat.</li>
-  <li><strong>Three empty sheets in the workbook export.</strong> <code>Customer_Forecast</code>, <code>Customer_SKU_Forecast</code>, and <code>June_Annualization_Test</code> were being created but populated only when a specific path executed. Fix: force-write the empty header row so downstream pivot and formula tables don't break on missing ranges.</li>
-  <li><strong>Stale Formula_Guide references.</strong> The guide listed formulas that referenced an older schema. Fix: generate the guide from the same dict that generates the workbook, so they can't drift.</li>
-  <li><strong>Intermittent-SKU exception noise.</strong> SKU_26 produced 21 "Demand Drop" rows in a single month because the calendar-month median was zero and any nonzero value looked like a spike while every zero looked like a drop. Fix: suppress spike/drop rules entirely when ≥40% of months are zero; report "intermittent demand" as a single labelled row.</li>
-  <li><strong>pyarrow mixed-type error in the Exceptions DataFrame.</strong> The Exceptions sheet had a column that was sometimes int, sometimes string, sometimes NA. pyarrow refused to serialize it. Fix: force the column to string at write time and document the transformation.</li>
-  <li><strong>Action-vs-trend_check contradiction.</strong> A SKU could simultaneously get "Maintain Current Stocking" from the action layer and "Review" from the trend check. Two rules firing on different criteria, disagreeing. Fix (Option A): if the trend check says Review, force the action to Validate. The stricter rule wins.</li>
-  <li><strong>Stale virtual environment after moving the project from C: to D:.</strong> The venv had absolute paths baked into it. Fix: recreate the venv after any drive change. Nothing more exotic than that.</li>
-  <li><strong><code>six_month_selected</code> NameError in <code>portfolio.py</code>.</strong> The variable was only defined inside one branch of the model-comparison block. When the block took a different branch, the later reference threw. Fix: initialize to <code>None</code> at function scope and check before use.</li>
-</ol>
-
-<p>None of those are interesting in isolation. Together they are the difference between a script that works on your laptop and a tool someone else can run.</p>
-
-<hr>
-
-<h2>11. What I took away</h2>
-
-<ul>
-  <li><strong>The finding is the deliverable.</strong> "0.27% of pairs are forecastable" is a more useful sentence than any forecast number this project produced. That sentence changes what the business does next. The forecast numbers change what the business orders next month. The first is strategy. The second is tactics.</li>
-  <li><strong>Honest metrics beat flattering metrics.</strong> I could have reported "58% win rate" and stopped. That number is true and it flatters the model. But the volume-weighted WAPE is the number a supply chain lead needs to make a decision, and that number says the model is 3× worse than a naive baseline on the SKUs that matter.</li>
-  <li><strong>A forecasting app's most important feature is knowing when not to forecast.</strong> This project started as "build a demand forecasting engine." It ended as "build a tool that tells you which demand is forecastable." Those are different products, and the second one is more useful.</li>
-  <li><strong>The diagnostics are the product.</strong> If I had shipped only the forecast numbers, this pilot would have looked like a disaster. If I had shipped only the win rate, it would have looked like a triumph that the volume number contradicts. What I actually shipped was a stack of diagnostics that told the analyst, in plain language, which numbers to trust and which to validate.</li>
-</ul>
-
-<hr>
-
-<h2>12. Stack</h2>
-
-<table>
-  <tr><th>Layer</th><th>Tool</th></tr>
-  <tr><td>Data pipeline</td><td>Python, Pandas, NumPy</td></tr>
-  <tr><td>Models</td><td>Statsmodels (ETS), custom Naive / Seasonal Naive</td></tr>
-  <tr><td>Backtesting</td><td>Expanding-window cross-validation, custom</td></tr>
-  <tr><td>Reliability + decision layer</td><td>Custom Python</td></tr>
-  <tr><td>UI</td><td>Streamlit</td></tr>
-  <tr><td>Workbook export</td><td>openpyxl</td></tr>
-  <tr><td>Tests</td><td>pytest (38 tests, all passing)</td></tr>
-  <tr><td>Data</td><td>Real ERP export — 84,741 cleaned order lines, 872 customers, 4,307 SKUs</td></tr>
-</table>
-
-<p class="meta">Source, live demo, and the full case study are linked from <a href="index.html#systems">the systems section</a>.</p>
-
-</article>
-
-</main>
-
-<footer class="site-footer">
-  <p>© Muhammad Ahmad — <a href="index.html">Portfolio</a> · <a href="case-study-forecasting.html">Case Study</a></p>
+<section class="article-body">
+  <div class="prose">
+
+    <h2>1. The problem</h2>
+    <p>A wholesale distributor of consumer electronics across Latin America was making stocking decisions on <strong>4,307 SKUs</strong> using a spreadsheet and intuition. Their ERP held 4.5 years of order history — roughly 290,000 raw order lines — but nobody had ever asked the data a simple question:</p>
+    <p><strong>Which SKUs can actually be forecast, and which ones can't?</strong></p>
+    <p>That question sounds technical. It isn't. It's the difference between a supply chain that plans and a supply chain that guesses. If you treat a lumpy, contract-driven SKU the same way you treat a steady, high-volume SKU, you will either overstock (cash locked in inventory) or understock (lost sales, unhappy customers). Both are expensive. Both are avoidable.</p>
+    <p>The brief I set myself was not "build a forecasting model." It was:</p>
+    <blockquote>
+      <p>Build a tool that takes a raw ERP export and tells an analyst, honestly, which SKUs they can trust a forecast on — and which ones need a phone call to the customer instead.</p>
+    </blockquote>
+    <p>That distinction is the entire project.</p>
+
+    <h2>2. The data</h2>
+    <p>The dataset is a real ERP export from a working distributor. Not synthetic, not scraped, not a Kaggle competition. Real order lines with real mess in them.</p>
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>Raw order lines</td><td>~290,000</td></tr>
+      <tr><td>Clean order lines after filtering</td><td>84,741</td></tr>
+      <tr><td>Distinct customers</td><td>872</td></tr>
+      <tr><td>Distinct SKUs</td><td>4,307</td></tr>
+      <tr><td>Date range</td><td>2023-01-02 to 2026-08-31</td></tr>
+      <tr><td>Total net units</td><td>~5.78M</td></tr>
+    </table>
+    <p>The first finding came before any modeling. <strong>Roughly 21% of raw rows were not sales.</strong> They were discount adjustments, returns, and cancellations posted as negative-quantity transactions. If you naively sum the quantity column, you get a number that looks like demand but isn't. Every downstream forecast is wrong if this step is wrong.</p>
+    <p>So the pipeline does three things before any model sees the data:</p>
+    <ul>
+      <li><strong>Separates gross demand from returns.</strong> Net demand (gross minus returns) is the forecast target. Gross demand and returns remain visible for sensitivity analysis.</li>
+      <li><strong>Removes exact duplicates.</strong> ERP exports frequently double-post. Detected and removed.</li>
+      <li><strong>Establishes a completeness cutoff.</strong> The last month in the data is often partial. The pipeline uses the last <em>complete</em> month as the forecasting anchor. This sounds trivial. It isn't. Forecasting off a partial month produces a fake trend and a fake seasonality signal, and both errors propagate into every SKU.</li>
+    </ul>
+    <p>After cleaning, the app reports its own data quality: rows, customers, SKUs, invalid rows removed, exact duplicates removed, and a flag for any rows above the 99th percentile of absolute quantity. On the pilot training set, the app retained <strong>103 outlier rows for investigation rather than silently dropping them.</strong> Silent outlier removal is how forecasters lie to themselves.</p>
+
+    <h2>3. The finding: 0.27%</h2>
+    <p>Of the 872 customers and 4,307 SKUs, roughly 34,031 customer × SKU pairs ever had positive demand. The question is: how many have enough <em>monthly</em> history to forecast?</p>
+    <table>
+      <tr><th>Filter</th><th>Pairs remaining</th><th>% of total</th></tr>
+      <tr><td>Any positive demand ever</td><td>34,031</td><td>100%</td></tr>
+      <tr><td>At least 12 months of monthly history</td><td>92</td><td><strong>0.27%</strong></td></tr>
+      <tr><td>At least 24 months of monthly history</td><td>5</td><td><strong>0.015%</strong></td></tr>
+    </table>
+    <p>And on the SKU side: <strong>79% of SKUs had fewer than 6 months of activity.</strong></p>
+    <p>Read that again. Less than one-third of one percent of customer × SKU pairs have enough monthly history for a classical time-series model to even attempt a forecast. Fifteen thousandths of a percent have enough history for a model to estimate seasonality with any confidence.</p>
+    <p>This is not an anomaly. <strong>This is what wholesale distribution actually looks like.</strong> A reseller orders a bulk shipment in March, another in July, nothing for four months, then a spike on a new SKU launch. That is not monthly demand. That is a reorder-probability problem wearing a time-series costume.</p>
+    <p>The insight the project produced is not a forecast. It is this:</p>
+    <blockquote>
+      <p>This dataset has a small forecastable core and a large unforecastable tail, and treating them the same is the actual risk.</p>
+    </blockquote>
+
+    <h2>4. What I built</h2>
+    <p>Given the finding, the tool had to do three things well:</p>
+    <ul>
+      <li><strong>Forecast honestly on the forecastable core.</strong> Three models — Naive (repeat last year), Seasonal Naive (repeat the same month last year), and ETS (exponential smoothing with trend and seasonality). Selected per SKU via expanding-window backtesting, not a global choice.</li>
+      <li><strong>Refuse to forecast on the tail.</strong> If a pair has insufficient history, the tool does not produce a confident number. It produces a clear "Insufficient history — validate with customer" label and a written reason.</li>
+      <li><strong>Explain itself in plain language.</strong> Every SKU gets a reliability tier, a pattern label, a demand-type label, and a business action.</li>
+    </ul>
+    <p>The business actions are the point:</p>
+    <table>
+      <tr><th>Action</th><th>Meaning</th></tr>
+      <tr><td><strong>Validate with Customer</strong></td><td>Do not act on the number until you've confirmed it with the customer.</td></tr>
+      <tr><td><strong>Increase Stocking</strong></td><td>Model is reliable, direction is up. Raise the order.</td></tr>
+      <tr><td><strong>Maintain Current Stocking</strong></td><td>Model is reliable, direction is flat. Don't overthink it.</td></tr>
+      <tr><td><strong>Evaluate for Reduction</strong></td><td>Model is reliable, direction is down. Cut the order.</td></tr>
+    </table>
+    <p>The engine is built on Pandas, Statsmodels, and a custom reliability layer. The UI is Streamlit. The output is a decision workbook in Excel with live formulas, a pivot-table guide, and a documented methodology sheet. 46 pytest tests cover the pipeline end-to-end.</p>
+
+    <h2>5. Validation result — and it didn't work the way we expected</h2>
+    <p>I tested the app on 92 forecastable customer × SKU pairs. Training window: 2023-01 to 2025-08. Holdout: 2025-09 to 2026-08. Twelve months held back, never seen by the model.</p>
+    <table>
+      <tr><th>Metric</th><th>Value</th></tr>
+      <tr><td>Pairs attempted</td><td>92</td></tr>
+      <tr><td>Pairs that produced a forecast</td><td>57</td></tr>
+      <tr><td>Pairs with non-zero demand in the holdout</td><td>31</td></tr>
+      <tr><td>Model beats Naive on</td><td>18 of 31 (<strong>58% win rate</strong>)</td></tr>
+      <tr><td>Median absolute % error — model</td><td>208.4%</td></tr>
+      <tr><td>Median absolute % error — naive</td><td>1900.0%</td></tr>
+      <tr><td><strong>Volume-weighted WAPE — model</strong></td><td><strong>178.7%</strong></td></tr>
+      <tr><td><strong>Volume-weighted WAPE — naive</strong></td><td><strong>65.5%</strong></td></tr>
+    </table>
+    <p>Two readings, both true:</p>
+    <p><strong>Reading 1 (favourable):</strong> the model beat naive on 58% of pairs. Median error dropped from 1900% to 208% — a 9× improvement. On the long tail of small, low-volume SKUs, the model is genuinely better than "repeat last year."</p>
+    <p><strong>Reading 2 (honest, and this is the true one):</strong> volume-weighted WAPE — which is what actually matters for stock decisions — is <strong>178.7% for the model vs 65.5% for naive.</strong> On the SKUs that carry the business, the model is 3× worse than the naive baseline.</p>
+    <p>The 58% win rate counts pairs equally, including 20-unit tail SKUs. The volume-weighted number counts the big SKUs, which is where stockouts and overstock actually cost money. If you are running a warehouse and you have to choose between the two numbers, you choose the second one.</p>
+
+    <h3>What went wrong — the diagnosis</h3>
+    <p>Look at the top 10 pairs by holdout volume. Every single one is <code>OMNI CHANNEL C/O AMAZON US</code>. That's the concentration problem. And for each of them, the model over-forecast.</p>
+    <p>For the top SKU, <code>WALL-CHARGR-25W</code>:</p>
+    <table>
+      <tr><th>Quantity</th><th>Value</th></tr>
+      <tr><td>Forecast (ETS)</td><td>58,148</td></tr>
+      <tr><td>Actual holdout</td><td>22,791</td></tr>
+      <tr><td>Naive (last 12m training)</td><td>37,021</td></tr>
+    </table>
+    <p>The ETS model saw growth in the training window, extrapolated it, and forecast 58k. Actual was 22.8k — a <strong>155% over-forecast.</strong> Naive said 37k — a 62% over-forecast. Both wrong, both over. Naive was closer.</p>
+    <p><strong>Why is naive closer than ETS here?</strong> Because ETS with additive trend on lumpy wholesale data extrapolates noise. When the training window contains a big spike (a bulk Amazon order, a launch stocking, a promotion), ETS thinks that spike <em>is the trend</em> and projects it forward. Naive just says "repeat last year" and stays grounded.</p>
+    <p>This is a real, documented, common failure mode of trend-following models on wholesale data. It is not a bug in the code. It is the physics of the problem.</p>
+
+    <h3>What the app got right</h3>
+    <p>Here is the part that matters for the interview.</p>
+    <p><strong>The app correctly flagged the SKUs where the model would fail.</strong> It did not confidently produce a wrong number. It produced a number <em>and</em> a warning:</p>
+    <ul>
+      <li>On <code>WALL-CHARGR-25W</code>, the SKU Decision page shows <strong>Reliability: Medium</strong>, <strong>Selected model: ETS</strong>, <strong>Action: Validate with Customer</strong>, and a yellow warning: <em>"Forecast grows +57.1% vs last 12 months (unusually high). 6-month backtest selects Naive, while the 12-month selection is ETS; inspect both because the forecast horizon is 12 months."</em></li>
+      <li>Across the portfolio, <strong>84 of 92 pairs were assigned Low reliability</strong>, most with the reason <em>"Best model WAPE is ≥100%"</em> or <em>"History is only N months (&lt;24)."</em></li>
+      <li>The action label on every one of those pairs is <strong>"Validate with Customer."</strong></li>
+    </ul>
+    <p>The model was wrong. The app knew the model was wrong. The app said so. That is working as designed.</p>
+    <blockquote>
+      <p>The most important output of this forecasting app was telling the user not to trust the forecast without validation.</p>
+    </blockquote>
+
+    <h2>6. From forecast to replenishment — v2</h2>
+    <p>v1 answered the question "what will demand be?" and was honest that the answer was usually "we don't know." That is a useful tool. It is not a <em>complete</em> tool. A supply chain lead cannot take "we don't know" to a customer. They need a next action.</p>
+    <p>The first version of the replenishment layer produced this on the pilot portfolio: 85 SKUs, every one receiving <code>action = "Validate with Customer"</code>, every one with <code>recommended_order_qty = 0</code>. The trust rule was working correctly — 84 of the 85 SKUs are Low reliability, and the one Medium-reliability SKU had a Review trend-check. Both are legitimate blocks.</p>
+    <p>But a supply chain lead cannot act on "validate 85 things." That's the same as "do nothing."</p>
+    <p><strong>The fix was not to loosen the trust rule. It was to produce two numbers instead of one:</strong></p>
+    <ul>
+      <li><strong><code>recommended_order_qty</code></strong> — the dispatchable quantity. Zero when the trust rule blocks. This is what the app would order autonomously.</li>
+      <li><strong><code>recommended_order_qty_if_validated</code></strong> — the quantity to order <em>once the customer confirms the forecast</em>. This is always computed, regardless of reliability tier.</li>
+    </ul>
+    <p>The second number is the product. It's what the supply chain lead walks into the customer call with. Every SKU also gets a <code>validation_urgency</code> bucket derived from days of cover versus lead time:</p>
+    <table>
+      <tr><th>Urgency</th><th>Rule</th><th>Meaning</th></tr>
+      <tr><td><strong>Call today</strong></td><td>days of cover &lt; lead time</td><td>Cannot recover if the call waits.</td></tr>
+      <tr><td><strong>Call this week</strong></td><td>days of cover &lt; 1.5 × lead time</td><td>Buffer is thin but recoverable.</td></tr>
+      <tr><td><strong>Monitor</strong></td><td>days of cover &lt; lead time + review period</td><td>Inside the reorder window; watch next cycle.</td></tr>
+      <tr><td><strong>No action</strong></td><td>everything else</td><td>Cover is comfortably above the reorder window.</td></tr>
+    </table>
+    <p>SKUs are ranked 1..N: first by urgency bucket, then by days of cover ascending within each bucket. Rank 1 is always the SKU with the smallest margin between its current cover and its lead time.</p>
+
+    <h3>The pilot worklist</h3>
+    <table>
+      <tr><th>Rank</th><th>SKU</th><th>Supplier</th><th>Urgency</th><th>Days of cover</th><th>Order if validated</th></tr>
+      <tr><td>1</td><td><code>R400-SOM-BDFEGA</code></td><td>China</td><td>Call today</td><td>0.1</td><td>9,869</td></tr>
+      <tr><td>2</td><td><code>WALL-CHARGR-25W</code></td><td>Boss</td><td>Call today</td><td>0.2</td><td>9,198</td></tr>
+      <tr><td>3</td><td><code>XT2311-3M128BKU</code></td><td>Xiomi</td><td>Call today</td><td>7.7</td><td>439</td></tr>
+      <tr><td>4</td><td><code>IPAD9-64SIL-WIF</code></td><td>Apple</td><td>Call today</td><td>17.1</td><td>50</td></tr>
+      <tr><td>5</td><td><code>R400-SBUDSFEBKU</code></td><td>China</td><td>Call today</td><td>22.0</td><td>50</td></tr>
+    </table>
+    <p>The top of the list is <code>R400-SOM-BDFEGA</code>, with <strong>2.4 hours of cover</strong> against a 25-day lead time. Rank 2 is <code>WALL-CHARGR-25W</code> — the SKU from v1 — with <strong>5.3 hours of cover</strong> and a Medium reliability tier whose decision-layer verdict was <em>"Validate with Customer, driven by OMNI CHANNEL C/O AMAZON US, 100% share."</em></p>
+    <p>The app will not dispatch an order for either. It <em>will</em> tell the analyst to call China about 9,869 units and Boss about 9,198 units, in that order, before lunch.</p>
+
+    <h3>The wall charger, revisited</h3>
+    <p>v1 flagged <code>WALL-CHARGR-25W</code> for three independent reasons: Medium reliability, a <code>Review</code> trend-check, and a decision-layer verdict starting with "Validate." Each was sufficient on its own. The app zeroed the order and told the analyst to call the customer.</p>
+    <p>v2 keeps the same block, but adds the number the analyst takes into the call:</p>
+    <blockquote>
+      <p><strong>Call today — validate &amp; order.</strong> Days of cover 0.2. Stockout risk High. Per policy no order is dispatched until the signal is validated with the customer. <em>If the customer confirms, order 9,198 units from Boss.</em></p>
+    </blockquote>
+    <p>That final sentence is the whole difference between v1 and v2. v1 said <em>"don't trust this forecast."</em> v2 says <em>"don't trust this forecast, and here is exactly what to do when you've verified it."</em></p>
+
+    <h2>7. What this does not mean</h2>
+    <ul>
+      <li><strong>It does not mean the app is broken.</strong> The app correctly assigned Medium/Low reliability. It fired the model-horizon disagreement warning. It returned "Validate with Customer" as the action. If the app had confidently returned a number with High reliability, <em>that</em> would be a bug. It didn't.</li>
+      <li><strong>It does not mean the synthetic-data demo was wrong.</strong> On synthetic data with stable seasonality, Seasonal Naive won and the reliability tiers correctly sorted the SKUs. On lumpy wholesale data, ETS over-extrapolates and the tiers correctly sort into Low. Both findings are correct for their respective datasets.</li>
+      <li><strong>It does not mean the app should be rebuilt.</strong> A tool that says <em>"I'm not sure about this SKU — validate before acting"</em> is more valuable than one that confidently says the wrong number. The rebuild would be to add reorder-probability modelling for the 99.73% of pairs where monthly time-series is the wrong frame. That is a v3, not a v1 fix.</li>
+      <li><strong>The v2 pilot's on-hand inventory is a synthesized snapshot.</strong> The distributor's ERP export did not include a live inventory feed, so the on-hand numbers used to demonstrate v2 are illustrative. The logic is production-ready; the specific quantities would change with a real inventory source.</li>
+    </ul>
+
+    <h2>8. Recommendation</h2>
+    <p>For the 33,939 customer × SKU pairs that cannot be forecast monthly, monthly time-series is the wrong tool. The right recommendations are:</p>
+    <ul>
+      <li><strong>Customer reorder-probability modelling.</strong> Instead of predicting <em>how much</em> a customer will order next month, predict <em>whether</em> they will order. The right output is a probability and a reorder window, not a point forecast.</li>
+      <li><strong>Aggregate customer-level forecasting.</strong> Roll the SKU-level chaos up to the customer level. A customer that orders 400 SKUs irregularly still has a fairly stable <em>total</em> monthly demand. Forecast the aggregate, allocate down proportionally.</li>
+      <li><strong>New-SKU launch curves.</strong> For SKUs with under 6 months of activity, you cannot forecast monthly demand. You can forecast against a launch curve — either a category-level curve or a curve from a comparable prior SKU.</li>
+    </ul>
+    <p>For the 92-pair forecastable core: keep the three-model selection with expanding-window backtest, and promote both guardrails from warnings to hard rules:</p>
+    <ul>
+      <li><strong>Cap the model's trend extrapolation</strong> when the SKU's recent 3-month volume is below the trailing-12-month average. This specifically prevents the <code>WALL-CHARGR-25W</code> failure mode.</li>
+      <li><strong>Force "Validate with Customer"</strong> whenever the 6-month and 12-month backtests select different models. The disagreement <em>is</em> the signal.</li>
+    </ul>
+
+    <h2>9. What I took away</h2>
+    <p>Three things, in order of importance:</p>
+    <p><strong>The finding is the deliverable.</strong> "0.27% of pairs are forecastable" is a more useful sentence than any forecast number this project produced. That sentence changes what the business does next. The forecast numbers change what the business orders next month. The first is strategy. The second is tactics. Strategy is worth more.</p>
+    <p><strong>Honest metrics beat flattering metrics.</strong> I could have reported "58% win rate" and stopped. That number is true and it flatters the model. But the volume-weighted WAPE is the number a supply chain lead needs to make a decision, and that number says the model is 3× worse than a naive baseline on the SKUs that matter. Reporting the second number, unprompted, is the difference between an analyst and a vendor.</p>
+    <p><strong>A forecasting app's most important feature is knowing when not to forecast.</strong> This project started as "build a demand forecasting engine." It ended as "build a tool that tells you which demand is forecastable — and what to do about it." Those are different products, and the second one is more useful. The 84 of 92 Low reliability labels are not a failure of the model. They are the product.</p>
+
+    <h2>10. The stack</h2>
+    <table>
+      <tr><th>Layer</th><th>Tool</th></tr>
+      <tr><td>Data pipeline</td><td>Python, Pandas, NumPy</td></tr>
+      <tr><td>Models</td><td>Statsmodels (ETS), custom Naive / Seasonal Naive</td></tr>
+      <tr><td>Backtesting</td><td>Expanding-window cross-validation, custom</td></tr>
+      <tr><td>Reliability + decision layer</td><td>Custom Python</td></tr>
+      <tr><td>Replenishment layer</td><td>Custom Python (<code>inventory_decision.py</code>)</td></tr>
+      <tr><td>UI</td><td>Streamlit</td></tr>
+      <tr><td>Workbook export</td><td>openpyxl</td></tr>
+      <tr><td>Tests</td><td>pytest (46 tests, all passing)</td></tr>
+      <tr><td>Data</td><td>Real ERP export — 84,741 cleaned order lines, 872 customers, 4,307 SKUs</td></tr>
+    </table>
+    <p><em>Engineering log with the full technical narrative:</em> <a href="engineering-log-4.html" style="color:var(--amber-soft);">engineering-log-4.html &rarr;</a></p>
+
+    <hr>
+    <p style="font-size:14px;">Want to see the voice agent log? <a href="engineering-log-3.html" style="color:var(--amber-soft);">Read Voice AI · Log 03 &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk supply chain analytics.</h2>
+        <p>Open to global and remote roles building forecasting, planning, and decision-support systems — and happy to walk through any of the systems above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF CASE STUDY</span>
+    </div>
+  </div>
 </footer>
 
 </body>
