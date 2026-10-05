@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log 05: Building a Quran Retrieval Benchmark From Scratch | Muhammad Ahmad</title>
+<meta name="description" content="A third chapter of the Ahmad-AI build: how a working multilingual search system turned out to be broken for Arabic, and what it took to build a 68-question hand-labeled benchmark to find out the truth.">
+<meta name="keywords" content="Quran Retrieval, Benchmark, Arabic NLP, RAG, Evaluation, Uthmani, camel-tools, Cross-lingual Retrieval, Islamic AI">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-5.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log 05: Building a Quran Retrieval Benchmark From Scratch">
+<meta property="og:description" content="68 hand-labeled questions, three rejected datasets, and one counter-intuitive finding that changed how we think about cross-lingual retrieval.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-5.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log 05: Building a Quran Retrieval Benchmark From Scratch",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-5.html",
+  "about": ["Quran Retrieval", "Benchmark", "Arabic NLP", "RAG", "Evaluation"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  .results-table{ width:100%; border-collapse:collapse; margin:20px 0 26px; font-size:14.5px; }
+  .results-table th{ text-align:left; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding:10px 8px; font-weight:500; }
+  .results-table td{ padding:10px 8px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .results-table td:first-child{ color:var(--text); }
+  .results-table td.num{ font-family:var(--mono); color:var(--amber-soft); }
+  .results-table tr:last-child td{ border-bottom:none; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log 05</b></span>
+    <span>SUBJECT: <b>Ahmad-Eval — Quran Retrieval Benchmark</b></span>
+    <span>STATUS: <b>68 questions · Hand-labeled · Reproducible</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Engineering Log</a>
+      <a href="engineering-log-5.html" class="current">Log 05</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 03</span>
+    <span class="eyebrow">Engineering Log · Ahmad-Eval</span>
+    <h1>Building a Quran Retrieval Benchmark From Scratch</h1>
+    <p class="lede">Chapter 02 ended with a working multilingual system. This is the chapter that discovered it was broken for Arabic — and what it took to find out the truth.</p>
+    <div class="tagrow">
+      <span class="tag"><b>68</b> Hand-Labeled Questions</span>
+      <span class="tag"><b>6,236</b> Verses Indexed</span>
+      <span class="tag"><b>3</b> Datasets Rejected</span>
+      <span class="tag"><b>camel-tools</b> + <b>islamqa-retriever</b></span>
+      <span class="tag"><b>Uthmani</b> Script Normalization</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html">Chapter 01: Guardrails & Hallucination Prevention</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Semantic Search</a>
+      <a href="engineering-log-5.html" class="active">Chapter 03: Building Ahmad-Eval</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The setup</h2>
+    <p>Chapter 02 ended on a working system: 56,998 Islamic texts indexed, deployed, accessible through a Streamlit UI, sharing correctly between English, Arabic, and Urdu queries. The multilingual embeddings were working. The vector stores were clean. The system was live.</p>
+    <p>This is the chapter where I found out that "working" and "correct" are different things.</p>
+    <p>A closer read of the Arabic side — not <em>did it return something</em>, but <em>how often did it return the right verse</em> — produced a number that stopped the project cold: <strong>under 20% recall@5 on Arabic queries</strong>. And a closer read of <em>why</em> revealed that the Quran vector store, the one I had been describing as "multilingual," contained only English translations. There was no Arabic Quran text indexed at all.</p>
+    <p>The Arabic queries had been succeeding through cross-lingual luck — the multilingual model mapping Arabic tokens onto English vector space. It worked often enough to look plausible and failed often enough to be useless.</p>
+    <p>This log is what happened after that discovery. Two sessions of retrieval work that turned into two sessions of benchmark construction. Three public datasets rejected. Sixty-eight questions hand-labeled. And two counter-intuitive findings that changed how I think about cross-lingual retrieval for Arabic.</p>
+
+    <h2>Part 1 — The forensic investigation</h2>
+    <p>The first question was simple: how bad is it, and is any of it fixable?</p>
+    <p>I tested five Arabic retrieval approaches against the fifteen Arabic questions I had labeled at the time:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Approach</th><th>Type</th><th>R@5</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>MiniLM on English corpus</td><td>Dense (cross-lingual)</td><td class="num">46.7%</td><td>Only because corpus is English</td></tr>
+        <tr><td>BGE-M3 on English corpus</td><td>Dense (multilingual)</td><td class="num">26.7%</td><td>Worse than MiniLM</td></tr>
+        <tr><td>ATM2 on Arabic corpus</td><td>Dense (Arabic STS)</td><td class="num">20.0%</td><td>Not a retrieval model</td></tr>
+        <tr><td>BM25 v3 (light stemmer)</td><td>Lexical</td><td class="num">40.0%</td><td>Best of the classic approaches</td></tr>
+        <tr><td>BM25 over camel-tools roots</td><td>Lexical (morphological)</td><td class="num">17.0%</td><td>Roots alone don't help</td></tr>
+      </tbody>
+    </table>
+
+    <p>Four of five failed. The one that "worked" (MiniLM at 46.7%) was only succeeding because the corpus was English and the queries happened to land near the right English verses in a cross-lingual vector space. That is not a retrieval strategy. That is luck.</p>
+
+    <h3>The ceiling discovery</h3>
+    <p>The bigger finding came from asking a different question: not "which retriever is best" but "what is the theoretical maximum any retriever in this family could achieve?"</p>
+    <p>For each Arabic query, I asked: does any of the verses we expect actually contain the query's root?</p>
+    <p>The answer was 64.4%. Not 100%. <strong>Thirty-eight of fifty-nine expected verses shared a lexical root with the query they were expected to answer.</strong> The rest needed semantic understanding — the verses were on-topic but used different words entirely.</p>
+    <p>Examples that broke every lexical method:</p>
+    <ul>
+      <li><strong>التهجد</strong> (night prayer) → expected verses describe the act of praying at night without using the word for it</li>
+      <li><strong>الغيبة</strong> (backbiting) → expected verses are about mockery and slander, not the specific word for gossip</li>
+      <li><strong>يوم القيامة</strong> (day of judgment) → expected verses describe the events of that day without naming it</li>
+    </ul>
+    <p>That 64.4% number killed the original target. The system couldn't reach 70% Arabic recall@5 with any root-based method — because 35% of the benchmark was unreachable by definition.</p>
+
+    <blockquote><p>Always compute the ceiling of your benchmark before optimizing against it. Otherwise you optimize toward a target that is unreachable by construction, and every failure looks like a bug when it is actually a definition.</p></blockquote>
+
+    <h2>Part 2 — The pivot to evidence grounding</h2>
+    <p>After the ceiling finding, I stopped trying to force retrieval accuracy and started asking what "reliable" actually meant for this product.</p>
+    <p>The answer was a three-tier model:</p>
+    <ul>
+      <li><strong>Tier 1 — Citation verification.</strong> Is this quote actually in the Quran as claimed? Achievable at near-100% via deterministic string matching against a canonical corpus.</li>
+      <li><strong>Tier 2 — Free-text retrieval.</strong> Find the right verse for a user's natural question. Best academic results on Quranic retrieval hover around 0.3 MAP. This is a research problem, not a solved one.</li>
+      <li><strong>Tier 3 — Interpretive answers.</strong> What is the ruling? Even frontier LLMs reach only 65-68% correctness on fiqh-related questions, because there often isn't a single correct answer.</li>
+    </ul>
+    <p>Reframing the promise as "99% reliable on citation grounding" rather than "99% accurate on Islamic answers" changed what we were building. And it made the release honest.</p>
+
+    <h2>Part 3 — The dataset audit</h2>
+    <p>To measure retrieval properly, I needed a benchmark. The instinct was to find one. So I searched.</p>
+    <p>I looked at every "Quran QA" dataset I could find on HuggingFace and in the academic literature. Six candidates. Three were rejected.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Rejected · Tarteel QuranQA</div>
+      <h4>It looked like retrieval. It was reading comprehension.</h4>
+      <p>Tarteel's QuranQA is derived from the Qur'an QA 2022/2023 shared task. It contains 238 test rows and 710 train rows of structured <code>{question, passage, answer_span}</code> triples. The format implies retrieval, but the semantics are the opposite: the passage is <em>given</em>, and the model must find the answer span <em>within</em> it.</p>
+      <p>The tell was that the same question appeared multiple times with different passages and different answers. When I merged each question's passage set into a single gold-verse range, some questions ballooned to 700+ verses. The "gold" was every passage the dataset had ever paired the question with.</p>
+      <p class="lesson">Lesson: if a dataset was designed for task X, do not assume it supports task Y just because the field names overlap.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Rejected · Qu-QA-v3</div>
+      <h4>Nineteen million instruction pairs.</h4>
+      <p>The repository <code>Ereeeeef3/Qu-QA-v3</code> is titled as if it were the QuQA benchmark. It contains 19,210,080 rows across 34 parquet shards, totaling 16.6 GB, with the generic schema <code>{input, output}</code> and no verse references at all.</p>
+      <p>It is a fine-tuning corpus. For our purposes it was structurally irrelevant.</p>
+      <p class="lesson">Lesson: check the schema, not the title. Names are aspirational. Fields are truth.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Rejected · Athar-Datasets (Quran Tafsir split)</div>
+      <h4>Scholarly passages, not verse-aligned tafsir.</h4>
+      <p><code>Kandil7/Athar-Datasets</code> is a large, well-structured Shamela-derived corpus: 15.8M passages across 8,425 books, categorized by aqeedah, fiqh, tafsir, seerah, and so on. It seemed ideal.</p>
+      <p>But the <code>quran_tafsir</code> split is not verse-by-verse tafsir. It is scholarly prose <em>tagged</em> as being about Quranic commentary, with no verse alignment. Reading it produced long discussions of methodology, author biographies, and general fiqh — anything except "here is tafsir for verse 2:255."</p>
+      <p class="lesson">Lesson: investigate the grain of the data. The right category label is not the same as the right unit of alignment.</p>
+    </div>
+
+    <h2>Part 4 — Building Ahmad-Eval v1</h2>
+    <p>After three rejections I stopped looking and started building. There was no public verse-level Quranic retrieval benchmark with verified gold, and no sign there would be one soon.</p>
+    <p>Ahmad-Eval v1 is 68 questions across six buckets:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>Questions</th><th>What it tests</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lexical Arabic</td><td class="num">15</td><td>Query root appears in expected verses</td></tr>
+        <tr><td>Semantic Arabic</td><td class="num">4</td><td>Query and expected verses share no roots</td></tr>
+        <tr><td>Multi-hop Arabic</td><td class="num">2</td><td>Two themes in one query</td></tr>
+        <tr><td>Cross-lingual (EN)</td><td class="num">20</td><td>English query, Arabic gold</td></tr>
+        <tr><td>Roman-Urdu</td><td class="num">20</td><td>Urdu-in-Latin-script query, Arabic gold</td></tr>
+        <tr><td>Unanswerable</td><td class="num">7</td><td>Questions the Quran does not address</td></tr>
+      </tbody>
+    </table>
+
+    <p>Every one of the 46 hand-labeled questions was verified verse-by-verse. For each theme — charity, patience, justice, gratitude — I searched the canonical corpus, filtered out false positives from polysemous roots, and picked only verses that genuinely matched the theme.</p>
+    <p>The unanswerable bucket is deliberately skewed toward hard cases. Four of the seven are modern fiqh questions that a model trained on Islamic text will be <em>confident</em> about but that the Quran does not address: cryptocurrency, smoking, the number of rak'ahs in Witr, rulings on horse meat. These test abstention, not retrieval.</p>
+
+    <h3>Adversarial cases the labeling surfaced</h3>
+    <p>Two passages in the Quran contain exact words that appear in our unanswerable questions, but not in the meaning the user is asking about:</p>
+    <ul>
+      <li><strong>الوتر</strong> appears in <code>89:3</code> (<em>"and by the even and the odd"</em>) — but that verse is an oath about cosmic duality, not about the Witr prayer.</li>
+      <li><strong>الحصان</strong> (horse) shares the root ح-ص-ن with <code>حصن</code> (fortress) and <code>محصنة</code> (chaste). Eleven verses contain the root; none is about horse meat.</li>
+      <li><strong>العملات</strong> (currencies) shares the root ع-م-ل with <code>عمل</code> (work/deeds), which appears in 30+ verses.</li>
+    </ul>
+    <p>These are exactly the cases a surface-level retriever will confuse. They are in the benchmark deliberately.</p>
+
+    <h2>Part 5 — Two findings that changed the design</h2>
+
+    <div class="bug-card">
+      <div class="bug-label">Finding 01 · Sample size</div>
+      <h4>The reranker helps on 68 questions and hurts on 15.</h4>
+      <p>In an earlier session I tested BGE-reranker-v2-m3 on 15 Arabic queries. It made things worse: R@1 dropped from 11.9% to 3.4%, R@5 from 25.4% to 16.9%. I concluded that generic cross-encoders don't work for Quranic Arabic.</p>
+      <p>Then I ran the same experiment on the full 68-question benchmark and the direction reversed: R@5 improved from 15.3% to 20.8%, and MRR improved from 0.200 to 0.286. The earlier conclusion was sample-size noise.</p>
+      <p class="lesson">Lesson: fifteen queries is enough to pick a clear winner between two very different retrievers. It is not enough to evaluate a subtle improvement from a reranker.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Finding 02 · Cross-lingual</div>
+      <h4>For cross-lingual retrieval, translate the corpus, not the query.</h4>
+      <p>The obvious cross-lingual approach is: translate the English query into Arabic, then search the Arabic corpus. We built that pipeline with NLLB-600M.</p>
+      <p>The alternative is: pre-translate the entire Arabic corpus into English once, index it with the English FTS5, and search with the English query directly. Zero translation noise at query time.</p>
+      <p>The results surprised me:</p>
+      <ul>
+        <li><strong>Path A (NLLB query → Arabic):</strong> improved cross-lingual R@5 from 0.0% to 8.3%.</li>
+        <li><strong>Path B (English corpus search):</strong> improved cross-lingual R@5 from 0.0% to <strong>21.2%</strong>.</li>
+      </ul>
+      <p>Same benchmark. Same 20 questions. The corpus-side translation more than doubles the query-side translation. The reason, on reflection, is obvious: query translation has to be good for one very short string with no context, whereas corpus translation was done offline with full verse context and can be verified and edited. And English BM25 against a clean English translation is a much easier ranking problem than Arabic BM25 against Uthmani script.</p>
+      <p class="lesson">Lesson: when two systems are both "translate then retrieve," the one that translates once offline usually wins over the one that translates at query time.</p>
+    </div>
+
+    <h2>Part 6 — What the numbers actually say</h2>
+    <p>Full results on the 68-question benchmark, best configuration (weighted RRF of BM25-root and islamqa-retriever-quran, reranked with BGE-reranker-v2-m3, English BM25 for the cross-lingual bucket):</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>R@5 (baseline)</th><th>R@5 (best config)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lexical Arabic</td><td class="num">15.3%</td><td class="num">20.8%</td></tr>
+        <tr><td>Semantic Arabic</td><td class="num">0.0%</td><td class="num">6.2%</td></tr>
+        <tr><td>Multi-hop Arabic</td><td class="num">22.2%</td><td class="num">22.2%</td></tr>
+        <tr><td>Cross-lingual (EN→AR)</td><td class="num">0.0%</td><td class="num">21.2%</td></tr>
+        <tr><td>Roman-Urdu→AR</td><td class="num">0.0%</td><td class="num">1.1%</td></tr>
+        <tr><td>Unanswerable (abstention accuracy)</td><td colspan="2" class="num">score-based abstention impossible</td></tr>
+      </tbody>
+    </table>
+
+    <p>Two numbers in that table are worth their own sentences:</p>
+    <ul>
+      <li><strong>Semantic Arabic is 6.2%.</strong> The queries where the answer doesn't share a word with the question — the ones only real semantic understanding can retrieve — are effectively unsolved. This is the open research problem.</li>
+      <li><strong>Unanswerable questions score higher than answerable ones on average.</strong> The score distributions overlap almost perfectly. This means we cannot use retrieval confidence as an abstention signal. Abstention must be verifier-based: if no retrieved verse can be verified as the answer, refuse, regardless of retriever confidence.</li>
+    </ul>
+
+    <h2>What I'd tell another engineer building an Islamic retrieval system</h2>
+    <p>Measure the ceiling of your benchmark first. If 35% of your queries can only be answered semantically and you are testing a lexical retriever, you will spend weeks optimizing against an unreachable target. The ceiling number changes the entire strategy.</p>
+    <p>Do not trust public QA datasets to serve as retrieval benchmarks. The two tasks look similar and are structurally different. Check the schema. Check whether the same query appears with different gold answers. Check whether "no answer" means "no answer in this passage" or "no answer in the corpus."</p>
+    <p>Hand-label your benchmark. It is slower, but it forces you to confront what "correct" actually means for each query. Three of the seven unanswerable questions in Ahmad-Eval only became unambiguous after I checked the specific verse references. A pre-made dataset would have hidden that.</p>
+    <p>When a reranker improves one small sample and hurts another, run the bigger sample before publishing the conclusion. Small-sample reranker deltas are noise. Two-digit percentage swings on fifteen queries are common.</p>
+    <p>For cross-lingual retrieval, prefer translating the corpus over translating the query. The corpus is static and editable offline. The query is one-shot and unverifiable.</p>
+
+    <h2>The Sadaqa plan</h2>
+    <p>Ahmad-Eval v1 will be published on HuggingFace as a public dataset — the questions, the gold verses, the labeling workflow, the rejection notes for the datasets that didn't work, and the evaluation scripts. Under a permissive license, with full provenance per item.</p>
+    <p>Because when I needed a verse-level Quranic retrieval benchmark, there wasn't one. The next person who tries to build this system should not have to spend two days discovering that every public "Quran QA" dataset is doing something else.</p>
+
+    <h2>Where it stands now</h2>
+    <p>The Ahmad-AI build has moved past the semantic search chapter into an evaluation chapter. The pipeline is measurable. The numbers are honest. The remaining work — verifier-based abstention, semantic retrieval, hadith extension — has specific answers to specific questions rather than guesses.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">68</div><div class="lbl">Hand-Labeled Questions</div></div>
+      <div class="metric"><div class="num">6,236</div><div class="lbl">Verses in Canonical DB</div></div>
+      <div class="metric"><div class="num">21.2%</div><div class="lbl">Cross-Lingual R@5 (via EN BM25)</div></div>
+      <div class="metric"><div class="num">3</div><div class="lbl">Datasets Rejected</div></div>
+    </div>
+
+    <p>Next: verifier-based abstention, a better semantic retriever for the 6.2% bucket, and eventual extension to a hadith retrieval benchmark.</p>
+    <p>One benchmark at a time.</p>
+
+    <hr>
+    <p style="font-size:14px;">New to the Ahmad-AI build? Start with <a href="engineering-log.html" style="color:var(--amber-soft);">Chapter 01: Guardrails & Hallucination Prevention &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems — and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
