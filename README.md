@@ -22,8 +22,10 @@ Below are the direct engineering deep-dives, architecture logs, and production-g
   *Full-duplex continuous voice assistant built on WebSockets, Deepgram Nova-3, GPT-4o-mini, and Aura-2 TTS.*
 * 📈 **[Engineering Log 04: Production Demand Forecasting Engine](https://emadaed.github.io/digisuite/engineering-log-4.html)**  
   *Multi-model wholesale ERP demand forecasting (Naive, Seasonal Naive, ETS) evaluated across 84,741 real order lines.*
-* 🔬 **[Engineering Log 05: Agentic AI Systems & Architecture Breakthroughs](https://emadaed.github.io/digisuite/engineering-log-5.html)**  
-  *Next-generation agentic workflows, state machines, and fail-safe automation patterns.*
+* 📖 **[Engineering Log 05: Building a Quran Retrieval Benchmark From Scratch](https://emadaed.github.io/digisuite/engineering-log-5.html)**  
+  *68 hand-labeled questions, three rejected datasets, and the counter-intuitive finding that translating the corpus beats translating the query for cross-lingual retrieval.*
+* 🧪 **[Engineering Log 06: Scaling Ahmad-Eval to 196 Hand-Reviewed Questions](https://emadaed.github.io/digisuite/engineering-log-6.html)**  
+  *Growing the benchmark 3x, hand-verifying every gold verse against the Quranic text, fixing a qid collision bug, and re-evaluating the retriever on the cleaned gold.*
 * 📊 **[Case Study: Wholesale ERP Demand Forecasting Validation](https://emadaed.github.io/digisuite/case-study-forecasting.html)**  
   *12-month backtested evaluation, WAPE analysis, lumpy order detection, and automated Excel worklist generation.*
 
