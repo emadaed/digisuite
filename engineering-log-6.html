@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log 06: Scaling Ahmad-Eval to 196 Hand-Reviewed Questions | Muhammad Ahmad</title>
+<meta name="description" content="How the Quran retrieval benchmark grew from 68 to 196 questions, why every gold verse had to be re-read by hand, and what the cleaned benchmark revealed about cross-lingual, Roman-Urdu, and semantic retrieval.">
+<meta name="keywords" content="Quran Retrieval, Benchmark, Arabic NLP, RAG, Evaluation, Cross-lingual Retrieval, Roman-Urdu, Islamic AI, Hand-Labeled Benchmark">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-6.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log 06: Scaling Ahmad-Eval to 196 Hand-Reviewed Questions">
+<meta property="og:description" content="68 questions was a demo. 196 is a benchmark. Every gold verse read by hand, one qid bug found, one dictionary expanded, and the numbers that changed the story.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-6.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log 06: Scaling Ahmad-Eval to 196 Hand-Reviewed Questions",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-6.html",
+  "about": ["Quran Retrieval", "Benchmark", "Arabic NLP", "RAG", "Evaluation", "Cross-lingual Retrieval"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  .results-table{ width:100%; border-collapse:collapse; margin:20px 0 26px; font-size:14.5px; }
+  .results-table th{ text-align:left; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding:10px 8px; font-weight:500; }
+  .results-table td{ padding:10px 8px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .results-table td:first-child{ color:var(--text); }
+  .results-table td.num{ font-family:var(--mono); color:var(--amber-soft); }
+  .results-table tr:last-child td{ border-bottom:none; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log 06</b></span>
+    <span>SUBJECT: <b>Ahmad-Eval — Scale to 196 Questions</b></span>
+    <span>STATUS: <b>196 questions · Hand-Reviewed · Public Repo</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Engineering Log</a>
+      <a href="engineering-log-6.html" class="current">Log 06</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 04</span>
+    <span class="eyebrow">Engineering Log · Ahmad-Eval</span>
+    <h1>Scaling Ahmad-Eval to 196 Hand-Reviewed Questions</h1>
+    <p class="lede">Chapter 03 ended with a working benchmark at 68 questions. This is the chapter that discovered 68 was not a benchmark &mdash; it was a demo.</p>
+    <div class="tagrow">
+      <span class="tag"><b>196</b> Hand-Reviewed Questions</span>
+      <span class="tag"><b>6,236</b> Verses Indexed</span>
+      <span class="tag"><b>4</b> Review Patterns Discovered</span>
+      <span class="tag"><b>2</b> Public Repositories</span>
+      <span class="tag"><b>3</b> External Model Reviews</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html">Chapter 01: Guardrails &amp; Hallucination Prevention</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Semantic Search</a>
+      <a href="engineering-log-5.html">Chapter 03: Building Ahmad-Eval</a>
+      <a href="engineering-log-6.html" class="active">Chapter 04: Scaling to 196</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The setup</h2>
+    <p>Chapter 03 ended with a working Ahmad-Eval at 68 questions, six buckets, and an honest set of numbers. Cross-lingual R@5 was 21.2% via English BM25, semantic Arabic sat at 6.2%, Roman-Urdu was broken at 1.1%, and unanswerable detection had been proven impossible to do by score. Those were real findings and they changed the design.</p>
+    <p>But 68 questions is a diagnostic, not a benchmark. With 4 semantic questions, a single move shifts the bucket by 25 points. With 2 multi-hop questions, no metric means anything. The file was honest, but it was thin.</p>
+    <p>This is the log of what happened when we scaled it to 196 questions and then had to prove every single one of them. It turned out that finding candidates was easy. Verifying them was the work.</p>
+
+    <h2>Part 1 &mdash; The pivot: generating 130 more questions</h2>
+    <p>The obvious move was to expand every bucket roughly 3-5x: cross-lingual English from 20 to 60, lexical Arabic from 15 to 60, semantic Arabic from 4 to 40, Roman-Urdu from 20 to 40, unanswerable from 7 to 30. That target would put Ahmad-Eval in the same weight class as AyaTEC and the Qur'an QA 2023 shared task.</p>
+    <p>To generate them, we used a large language model as a drafting assistant. It proposed candidate questions and gold verses, bucket by bucket. In one sitting it produced roughly 130 new candidate questions across all six categories.</p>
+    <p>Each question was inserted through <code>add_label.py</code>, a validation tool that checks the refs against the canonical Quran DB, checks for duplicates, and assigns a numeric ID. Once the batch was in, <code>validate_qids.py</code> reported the file as structurally valid: no duplicate IDs, no missing refs, no format errors.</p>
+    <p>The file was now 199 questions. It was also, we realized shortly after, unverified. The validator checks form. It does not check whether the gold verse actually answers the question. Every one of the 130 new entries had been structurally validated and none had been semantically read.</p>
+
+    <blockquote><p>Structural validation and semantic validation are different jobs. A file can pass every schema check and still be full of wrong answers. If your benchmark matters, someone has to read it.</p></blockquote>
+
+    <h2>Part 2 &mdash; The ID collision bug</h2>
+    <p>Before the gold review could start, a smaller bug had to be fixed. When <code>validate_qids.py</code> was first run against the expanded file, it reported 25 duplicate IDs. Two questions in <code>lexical_ar</code> and 20 in <code>roman_urdu</code> shared IDs with earlier questions.</p>
+    <p>The cause was a small mistake in <code>add_label.py</code>:</p>
+
+<pre>n = sum(1 for q in data if q["bucket"] == bucket)
+qid = f"ae_{bucket}_{n:03d}"</pre>
+
+    <p>The ID was derived from the <em>count</em> of questions in a bucket, not from the <em>highest existing number</em>. If a bucket's numbering had gaps &mdash; for example, questions existed at <code>005-014</code> and <code>020-024</code> &mdash; the counter would eventually issue an ID that already existed. The file grew past the first gap and collisions started.</p>
+    <p>The fix had two parts. First, a one-time repair script renumbered the later duplicate of each collision to the next free number in the bucket. The original questions kept their IDs unchanged, so nothing downstream broke. Second, <code>add_label.py</code> was rewritten to derive the next ID from the maximum existing number in the bucket, with a collision guard as a second line of defense.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug · add_label.py</div>
+      <h4>Counting is not the same as identity.</h4>
+      <p>The original tooling assumed that "there are N questions in this bucket" and "the highest ID in this bucket is N" were equivalent. They were not, once a bucket had ever contained gaps. The bug is invisible at small scale and guaranteed to appear at larger scale.</p>
+      <p class="lesson">Lesson: any auto-generated identifier should be derived from the maximum existing identifier, never from a count. And every dataset should have a validator that checks uniqueness, because the failure mode is silent.</p>
+    </div>
+
+    <h2>Part 3 &mdash; Reading every gold verse by hand</h2>
+    <p>With the ID bug fixed, we did the thing that took the actual hours. Every question in the file was re-read, bucket by bucket, with all gold verses shown in the original Arabic, and a decision made per question: keep all, trim, or delete.</p>
+    <p>The method was deliberately manual. For each bucket we generated a review file:</p>
+
+<pre>python tools\show_bucket.py &lt;bucket&gt; --with-verses --out review_&lt;bucket&gt;.txt</pre>
+
+    <p>The file listed every question with its query, its gold verses, and the Arabic text of each verse. We read them in Notepad, wrote a verdict under each question, and then applied the verdicts in one batch through a fix script with a backup. Each bucket was committed and pushed separately, so every batch is auditable in git history.</p>
+    <p>Across 199 questions, the review produced <strong>5 corrections and 3 deletions</strong>. A 4% error rate. Small in absolute terms, and large in the specific sense that matters: all 8 of the wrong answers would have shipped. Any downstream system evaluated against them would have been scored against a wrong target.</p>
+
+    <h3>The four patterns the review caught</h3>
+    <p>By the end of the pass we could name what we were catching. These are the categories a structural validator cannot see, now documented in the benchmark repo's <code>REVIEW_NOTES.md</code>:</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Pattern 01 · "Mentioned" vs "answered"</div>
+      <h4>A verse that names the topic is not a verse that answers the question.</h4>
+      <p>A question like <em>"what is Paradise like?"</em> requires verses that <em>describe</em> Paradise. Verses that merely state "the believers are the companions of Paradise" name the topic without describing it. Five drops in two questions (<code>jannat kaisi hai</code>, <code>jahannam ka azab</code>) came from this pattern alone.</p>
+      <p class="lesson">Rule: if the query asks for a description, the gold must describe. If it asks for a ruling, the gold must rule.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Pattern 02 · The half-query</div>
+      <h4>A multi-hop query has two parts. Every gold verse must satisfy both.</h4>
+      <p>The question <em>"ilm aur amal"</em> (knowledge and action) had four gold verses that were all about action. None was about knowledge. The verses were correct for a single-topic query; they were wrong for this one. The whole question was deleted rather than weakened.</p>
+      <p class="lesson">Rule: for multi-hop, verify both concepts are present in every gold verse. If they cannot be, delete the question.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Pattern 03 · Same root, different sense</div>
+      <h4>Root match is not concept match.</h4>
+      <p>In a multi-hop question about prayer, one gold verse contained the word <em>صلوات</em> in the sense of "blessings from God" rather than "ritual prayer." The root matches; the meaning does not. Arabic roots are polysemous, and a lexical retriever will happily confuse them.</p>
+      <p class="lesson">Rule: polysemous roots need per-verse sense checks. A root hit is not a topical hit.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Pattern 04 · The tail matters</div>
+      <h4>A verse can start off-topic and end on-topic.</h4>
+      <p>One verse was almost deleted because its main content is about modesty guidance. But its closing command reads <em>"and turn to Allah in repentance, all of you"</em> &mdash; directly on-topic for the query it was attached to. Reading the whole verse, including the tail, saved it.</p>
+      <p class="lesson">Rule: read the whole verse. The relevant sentence may not be the first one.</p>
+    </div>
+
+    <h2>Part 4 &mdash; The benchmark gets its own repository</h2>
+    <p>By the time the review was done, it was clear the benchmark needed to be separable from the retriever. Two different concerns, two different release cadences, two different audiences. And a real risk, not just a stylistic one: if the same working directory contains both the dataset and the code that measures it, a careless commit can entangle them.</p>
+    <p>The benchmark now lives at its own public repository:</p>
+    <p><code>https://github.com/emadaed/quran-retrieval-benchmark</code></p>
+    <p>The repository contains the 196 questions, the labeling tools, the review notes, the workflow documentation, per-source license notes, and the provenance file. It does not contain the retriever code. It does not contain the canonical Quran database.</p>
+
+    <h3>What's in the repo</h3>
+    <ul>
+      <li><code>data/ahmad_eval_v1.json</code> &mdash; 196 questions, 6 buckets</li>
+      <li><code>tools/add_label.py</code> &mdash; commit a verified question (with the max+1 ID fix)</li>
+      <li><code>tools/label_helper.py</code> &mdash; search candidate verses by keyword or root</li>
+      <li><code>tools/validate_qids.py</code> &mdash; the structural validator</li>
+      <li><code>tools/show_bucket.py</code> &mdash; browse a bucket for review</li>
+      <li><code>docs/HANDOFF.md</code>, <code>SCHEMA.md</code>, <code>WORKFLOW.md</code>, <code>PROVENANCE.md</code>, <code>REJECTED_SOURCES.md</code>, <code>REVIEW_NOTES.md</code></li>
+      <li><code>LICENSES/</code> &mdash; per-source license notes (Tanzil, wahi)</li>
+    </ul>
+
+    <p>The retriever repo points at it from <code>PROJECT.md</code> and consumes it as a read-only dependency. If someone clones only the benchmark, they get the benchmark. If someone clones only the retriever, they get the retriever. The two are not entangled.</p>
+
+    <h2>Part 5 &mdash; The Roman-Urdu dictionary expansion</h2>
+    <p>When we tried to re-run the evaluation against the cleaned benchmark, the eval crashed. The immediate cause was a small bug in the eval script: eight Roman-Urdu questions had produced empty translations, and the script tried to look up ranks for them anyway.</p>
+    <p>The real cause was deeper. The Roman-Urdu transliteration pipeline maps Roman-Urdu content words to either Arabic or English equivalents via a hand-curated dictionary. When the benchmark grew from 20 Roman-Urdu questions to 39, eight of the new questions used words that were not in the dictionary, and produced empty output. There was no error &mdash; the tool simply returned nothing for those queries, and the eval did not know how to handle it.</p>
+    <p>The fix had two parts. First, the dictionary was expanded with roughly sixty new entries to cover every missing word: <code>shirk</code>, <code>chori</code>, <code>mitti</code>, <code>musa</code>, <code>firaun</code>, <code>kharch</code>, <code>hifazat</code>, <code>ashab</code>, <code>kahf</code>, and others. All 39 Roman-Urdu queries now produce non-empty output in both Arabic and English modes. Second, the eval script was patched to fail gracefully when a query has no translation, instead of crashing after two hours of reranking.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug · eval script</div>
+      <h4>A missing translation cost two hours of compute before it surfaced.</h4>
+      <p>The reranker had run to completion for both pipelines. The crash happened in the reporting stage, in the code that tries to compute metrics. Because nothing was written to disk before the report, the entire run was lost.</p>
+      <p class="lesson">Lesson: expensive pipelines should checkpoint intermediate results to disk, not hold everything in memory until the final write. And every dict lookup should have a safe default, not a hard index.</p>
+    </div>
+
+    <h2>Part 6 &mdash; The re-evaluation on cleaned gold</h2>
+    <p>With the ID bug fixed, the gold reviewed, the benchmark split into its own repo, and the Roman-Urdu dictionary expanded, we re-ran the full evaluation on all 196 questions. The table below is the honest output. Sample sizes are included because they matter.</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>N</th><th>R@1</th><th>R@5</th><th>R@10</th><th>MRR</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cross-lingual (EN&rarr;AR)</td><td class="num">40</td><td class="num">8.9%</td><td class="num">23.4%</td><td class="num">29.1%</td><td class="num">0.450</td></tr>
+        <tr><td>Lexical Arabic</td><td class="num">60</td><td class="num">4.9%</td><td class="num">19.1%</td><td class="num">30.1%</td><td class="num">0.295</td></tr>
+        <tr><td>Multi-hop Arabic</td><td class="num">2</td><td class="num">16.7%</td><td class="num">33.3%</td><td class="num">50.0%</td><td class="num">0.571</td></tr>
+        <tr><td>Roman-Urdu&rarr;AR</td><td class="num">39</td><td class="num">1.3%</td><td class="num">6.5%</td><td class="num">10.4%</td><td class="num">0.116</td></tr>
+        <tr><td>Semantic Arabic</td><td class="num">39</td><td class="num">2.2%</td><td class="num">11.9%</td><td class="num">17.0%</td><td class="num">0.168</td></tr>
+      </tbody>
+    </table>
+
+    <p>Compared to the 68-question baseline:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>R@5 (68q)</th><th>R@5 (196q, cleaned)</th><th>Delta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cross-lingual</td><td class="num">21.2%</td><td class="num">23.4%</td><td class="num">+2.2</td></tr>
+        <tr><td>Lexical Arabic</td><td class="num">20.8%</td><td class="num">19.1%</td><td class="num">&minus;1.7</td></tr>
+        <tr><td>Multi-hop Arabic</td><td class="num">22.2%</td><td class="num">33.3%</td><td class="num">+11.1</td></tr>
+        <tr><td>Roman-Urdu</td><td class="num">1.1%</td><td class="num">6.5%</td><td class="num">+5.4</td></tr>
+        <tr><td>Semantic Arabic</td><td class="num">6.2%</td><td class="num">11.9%</td><td class="num">+5.7</td></tr>
+      </tbody>
+    </table>
+
+    <p>Four things worth saying about this table:</p>
+    <ul>
+      <li><strong>Cross-lingual held at 23.4% with a doubled sample.</strong> The English BM25 path is not an artifact of a small bucket. It wins on 40 questions the same way it won on 20.</li>
+      <li><strong>Lexical Arabic moved from 20.8% to 19.1%.</strong> The direction is a drop, and it is honest. The original 15 hand-labeled lexical questions were easier than the 45 new ones. 19.1% is the number on 60 questions; the older 20.8% was a small, favorable sample.</li>
+      <li><strong>Semantic Arabic nearly doubled</strong> without any change to the retriever. The only change was a cleaner gold set and 35 more questions. The original 6.2% was under-measured at n=4.</li>
+      <li><strong>Lexical Arabic has a reranking problem, not a retrieval problem.</strong> R@10 (30.1%) is substantially higher than R@5 (19.1%). The correct verse is usually found but not ranked high enough. That is a different fix than improving the retriever.</li>
+    </ul>
+
+    <h2>Part 7 &mdash; What three external reviews changed</h2>
+    <p>We shared the review ledger with three frontier language models and asked them one question honestly: are there other Quranic retrieval benchmarks, and how does this one compare?</p>
+    <p>The answers converged. There are existing benchmarks &mdash; AyaTEC (207 questions, scholar-annotated, Arabic, includes unanswerable), IslamicFaithQA (EMNLP 2025, bilingual, abstention-focused), QRCD (extractive reading comprehension), QurSim (verse-to-verse similarity), the Qur'an QA 2023 shared task. But none combines verse-level gold with cross-lingual English queries, Roman-Urdu queries, and an explicit diagnostic bucket structure.</p>
+    <p>The reviews were also direct about what not to claim:</p>
+    <ul>
+      <li><strong>Do not call it "gold" publicly.</strong> With one annotator, what is gold for a thematic question is exactly where scholars legitimately differ. Call it <em>"human-reviewed v1."</em></li>
+      <li><strong>Get a second reviewer on a sample.</strong> Even 20&ndash;30 questions reviewed by someone else would strengthen the benchmark substantially.</li>
+      <li><strong>Report per-bucket, never a single blended number.</strong> Two questions cannot support a metric. Sixteen questions means one answer shifts the score by 6 points.</li>
+      <li><strong>Trimmed gold means valid alternatives count as misses.</strong> Report hit@k alongside recall and state the limitation.</li>
+      <li><strong>Freeze and version this file.</strong> Compute a hash, tag it <code>v1.0</code>, and preserve it. Future corrections get versioned, not silently applied.</li>
+    </ul>
+    <p>The reframing this produced is the honest framing going forward: <strong>Ahmad-Eval v1 is a 196-question, human-reviewed Quranic retrieval benchmark with six diagnostic buckets, including Roman-Urdu and cross-lingual coverage that no existing public benchmark provides. It is designed to complement AyaTEC and IslamicEval, not replace them.</strong></p>
+
+    <h2>Where it stands now</h2>
+    <p>The benchmark is public, hand-reviewed, split from the retriever, and committed at a frozen state. The retriever has honest numbers on the cleaned gold. The Roman-Urdu dictionary covers all current queries. The bugs found during this session &mdash; the ID collision, the empty-translation crash, the counting-not-identity mistake &mdash; are all documented in the journal and in the code.</p>
+    <p>There is real work left. Roman-Urdu retrieval is at 6.5% and the diagnosis (query density, not dictionary coverage) is now understood but not fixed. Semantic Arabic at 11.9% is better than before but still the hardest bucket. Lexical Arabic's reranking gap between R@5 and R@10 needs its own investigation. And the abstention policy for unanswerable questions is designed but not yet implemented &mdash; it needs a verifier, not a threshold.</p>
+    <p>But the benchmark itself is real. It has more questions than AyaTEC's original set. It has more buckets. It has more languages. And every gold verse in it has been read by a human against the actual Quranic text.</p>
+    <p>The next person who builds a Quranic retrieval system can measure against it, cite it, and argue with it. That is what a benchmark is for.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">196</div><div class="lbl">Hand-Reviewed Questions</div></div>
+      <div class="metric"><div class="num">6,236</div><div class="lbl">Verses Indexed</div></div>
+      <div class="metric"><div class="num">23.4%</div><div class="lbl">Cross-Lingual R@5</div></div>
+      <div class="metric"><div class="num">2</div><div class="lbl">Public Repositories</div></div>
+    </div>
+
+    <p>Next: Roman-Urdu retriever improvements, lexical-Arabic reranking, and verifier-based abstention for the unanswerable bucket. Then a freeze of <code>v1.0</code> and publication on Hugging Face.</p>
+    <p>One benchmark at a time.</p>
+
+    <hr>
+    <p style="font-size:14px;">New to the Ahmad-AI build? Start with <a href="engineering-log.html" style="color:var(--amber-soft);">Chapter 01: Guardrails &amp; Hallucination Prevention &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems &mdash; and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad &mdash; Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
