@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log 07: The Reranker Was Hurting, and the Metric Was Wrong | Muhammad Ahmad</title>
+<meta name="description" content="How a roots-overlap diagnostic built for one purpose surfaced a corpus-wide indexing bug, how a reranker was quietly losing 12 points on one bucket, and why a 19% metric was measuring the wrong thing.">
+<meta name="keywords" content="Quran Retrieval, Benchmark, Reranker, camel-tools, Indexing Bug, Evaluation Metric, Arabic NLP, RAG, Islamic AI">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-7.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log 07: The Reranker Was Hurting, and the Metric Was Wrong">
+<meta property="og:description" content="A roots-overlap check built to gate one eval found a 68%-of-corpus indexing bug. A no-reranker baseline found a 12-point regression hidden by an auto-selector. A 40-minute failure read found the 19% metric was measuring gold-set specificity, not retriever quality.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-7.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log 07: The Reranker Was Hurting, and the Metric Was Wrong",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-7.html",
+  "about": ["Quran Retrieval", "Benchmark", "Reranker", "Indexing", "Evaluation Metric", "Arabic NLP"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  .results-table{ width:100%; border-collapse:collapse; margin:20px 0 26px; font-size:14.5px; }
+  .results-table th{ text-align:left; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding:10px 8px; font-weight:500; }
+  .results-table td{ padding:10px 8px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .results-table td:first-child{ color:var(--text); }
+  .results-table td.num{ font-family:var(--mono); color:var(--amber-soft); }
+  .results-table tr:last-child td{ border-bottom:none; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log 07</b></span>
+    <span>SUBJECT: <b>Reranker regression, index bug, metric audit</b></span>
+    <span>STATUS: <b>Retrieval frozen · 17.5% roman_urdu · 5 buckets, 196 questions</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Engineering Log</a>
+      <a href="engineering-log-7.html" class="current">Log 07</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 05</span>
+    <span class="eyebrow">Engineering Log · Ahmad-Eval</span>
+    <h1>The Reranker Was Hurting, and the Metric Was Wrong</h1>
+    <p class="lede">Chapter 04 ended with a corrected index and a benchmark at 196 questions. This is the chapter where a diagnostic built to gate one eval found a corpus-wide indexing bug, a no-reranker baseline found a 12-point regression hidden behind an auto-selector, and a 40-minute failure read found that the headline metric was measuring the wrong thing.</p>
+    <div class="tagrow">
+      <span class="tag"><b>68.1%</b> of corpus affected by index bug</span>
+      <span class="tag"><b>11,156</b> hidden root occurrences</span>
+      <span class="tag"><b>+10.4</b> roman_urdu R@5 by removing a step</span>
+      <span class="tag"><b>13/15</b> failures were gold-set narrowness</span>
+      <span class="tag"><b>&le;1</b> hit noise floor</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html">Chapter 01: Guardrails &amp; Hallucination Prevention</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Semantic Search</a>
+      <a href="engineering-log-5.html">Chapter 03: Building Ahmad-Eval</a>
+      <a href="engineering-log-6.html">Chapter 04: Scaling to 196</a>
+      <a href="engineering-log-7.html" class="active">Chapter 05: Reranker, Index, Metric</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The setup</h2>
+    <p>Chapter 04 ended with three things in place: a 196-question hand-reviewed benchmark, a corrected pipeline running against a clean index, and a list of open problems. The most visible open problem was Roman-Urdu, still stuck near the floor at 7.1% R@5. The second was lexical Arabic, at 19.1% R@5 with an R@10 of 32.5% — a 13-point gap that suggested the right verses were being retrieved but not ranked high enough. The Session 7e write-up called it a reranker problem.</p>
+    <p>Both of those labels turned out to be wrong. Roman-Urdu's problem was not the retriever. Lexical Arabic's problem was not the reranker. And the diagnostic that revealed both was one that had been built for a completely different purpose.</p>
+
+    <h2>Part 1 — The diagnostic that found the wrong thing</h2>
+    <p>The Roman-Urdu pipeline in Chapter 04 was being extended with a semantic layer: Roman-Urdu transliterated to Urdu script, translated to Arabic by NLLB-200-distilled-600M, then fed into the standard Arabic retrieval pipeline. Before spending 100 minutes on the eval, a cheap gate was run: for each of 39 Roman-Urdu queries, does the NLLB Arabic output share at least one root with any of the gold verses? If not, retrieval is structurally impossible, and the eval will not help.</p>
+    <p>The gate returned 34 of 39. That was close to the threshold. Two of the five misses looked wrong, and one of them stood out:</p>
+
+<pre>qid 057  quran ki hifazat ka wada
+gold 15:9  إِنَّا نَحْنُ نَزَّلْنَا الذِّكْرَ وَإِنَّا لَهُ لَحَافِظُونَ
+  "Indeed, it is We who sent down the Quran, and indeed, We will be its guardian."
+
+overlap check said 15:9 had 3 roots and did not include حفظ.
+حفظ is the root of لحافظون ("guardian") — the exact word the
+query is about.</pre>
+
+    <p>The hypothesis was that the query extraction was wrong. Running the same extractor on the same verse in two forms produced the answer:</p>
+
+<pre>extract_roots("إِنَّا نَحْنُ نَزَّلْنَا الذِّكْرَ وَإِنَّا لَهُ لَحَافِظُونَ")
+  -> ['_نن', 'ذكر', 'ن_ح', 'نزل']              # حفظ missing
+
+extract_roots("إنا نحن نزلنا الذكر وإنا له لحافظون")
+  -> ['_نن', 'حفظ', 'ذكر', 'ن_ح', 'نزل']      # حفظ present</pre>
+
+    <p>Same verse, same analyzer. Different input. The Uthmani form (with full Quranic diacritics: superscript alef, small high seen, shadda combinations) tokenizes differently than the simplified form, and camel-tools returns different roots. The index had been built from Uthmani. The query path runs on simplified. The two sides of the system spoke different dialects.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug · Corpus root index</div>
+      <h4>The index and the query used different input forms, and camel-tools treated them differently.</h4>
+      <p><code>quran_roots.json</code> was built from Uthmani text. <code>root_extractor.extract_roots()</code> at query time runs on simplified Arabic. For 68.1% of the corpus — 4,247 of 6,236 verses — the simplified extraction produced roots that were absent from the index.</p>
+      <p class="lesson">Lesson: any two sides of a pipeline that call the same function must call it on the same input form. Silence hides this bug because the retriever still returns results — just fewer than it should.</p>
+    </div>
+
+    <p>The measurement was not subtle. 11,156 root occurrences were missing across the corpus. The verse <code>56:78</code> — <em>فِي كِتَابٍ مَّكْنُونٍ</em>, "in a well-guarded Book" — returned zero roots from Uthmani extraction, versus four from simplified. Whole verses had been invisible to the retriever for the entire project.</p>
+
+    <h2>Part 2 — Rebuilding the index</h2>
+    <p>The fix was to rebuild <code>data/quran_roots.json</code> from <code>data/quran_simple_clean.json</code>, so index-time and query-time extraction used the same input form. The old index was preserved as <code>quran_roots.json.uthmani_bak</code> and not deleted. A rebuild script (<code>scripts/rebuild_root_index.py</code>), a per-word trace tool (<code>scripts/review_added_roots.py</code>), and updated audits (<code>measure_uthmani_vs_simple.py</code>, <code>audit_root_index.py</code>) were added.</p>
+    <p>One complication: simplified extraction is not a pure copy of Uthmani extraction minus noise. It introduces a small set of spurious camel-tools stems from function words and demonstratives. The 11 that were curated and filtered:</p>
+
+<pre>كذلك فذلك لذلك بذلك بذلكم    (demonstrative ذلك artifacts, 123 verses)
+ذلل بذل                       (demonstrative ذلك variants, 474 + 5 verses)
+علنّة                         (shadda rendering artifact)
+كنه لكن خصة                   (function-word fragments)</pre>
+
+    <p>The two-phase curation mattered. The first pass identified the obvious demonstrative artifacts. The second pass — after printing the per-word trace for all 159 added roots — caught <code>ذلل</code> (474 verses, traced to <code>ذلك</code> variants) and <code>بذل</code> (traced to <code>بذلك</code>, and <code>ب-ذ-ل</code> is not a Quranic root). Both were invisible in the first pass because their example word in the compact table was a demonstrative that looked like noise, not a content word. This is exactly what the review tool was built to catch.</p>
+    <p>Verification after the 11-entry filter: 0 hidden roots, 100% index-versus-extraction match, zero orphans, zero asymmetries.</p>
+
+    <h2>Part 3 — The corrected baseline, honestly read</h2>
+    <p>The eval was re-run on the corrected index. The result was not what the size of the bug predicted.</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>Before</th><th>After</th><th>Delta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cross_lingual_en</td><td class="num">26.6%</td><td class="num">26.6%</td><td class="num">0.0</td></tr>
+        <tr><td>lexical_ar</td><td class="num">19.1%</td><td class="num">19.1%</td><td class="num">0.0</td></tr>
+        <tr><td>multi_hop_ar</td><td class="num">33.3%</td><td class="num">33.3%</td><td class="num">0.0</td></tr>
+        <tr><td>roman_urdu</td><td class="num">7.1%</td><td class="num">7.1%</td><td class="num">0.0</td></tr>
+        <tr><td>semantic_ar</td><td class="num">11.9%</td><td class="num">16.3%</td><td class="num">+4.4</td></tr>
+      </tbody>
+    </table>
+
+    <p>Only <code>semantic_ar</code> moved. +4.4 points, on 39 questions, is six additional gold verses retrieved into the top-5 across the bucket. That is real. But it is not the 68%-of-corpus number suggested.</p>
+    <p>The explanation is that the missing roots were the rare ones. Queries whose gold verses use high-frequency roots — prayer, charity, patience — were retrievable before the fix, because those roots were already in the index. Queries whose gold verses depend on rarer roots were the ones that gained. That is what the bucket names suggested, but it took the measurement to confirm.</p>
+
+    <blockquote>
+      <p>The index asymmetry was a real bug and is now fixed. It was not the bottleneck for the hardest buckets, and it was only the bottleneck for one. Both statements belong in the record.</p>
+    </blockquote>
+
+    <h2>Part 4 — The reranker, measured instead of assumed</h2>
+    <p>Chapter 04's write-up had blamed the reranker for <code>lexical_ar</code>'s R@5 / R@10 gap: 19.1% vs 32.1%, a 13-point spread. The suggestion was to swap the reranker for something better, or widen the rerank pool, or delete it outright based on a Session 3 experiment where the reranker had hurt on 15 questions.</p>
+    <p>None of those steps were taken, because none of them were justified by a measurement. The last thing before touching the reranker was a diagnostic: score the pre-rerank order with the same metrics as the current eval, and see whether the reranker is helping or hurting on 196 questions.</p>
+    <p>Two additive report sections were added to the eval: one comparing pre-rerank (<code>ar_ranks</code>) against post-rerank (<code>ar_rerank</code>) on the Arabic path, and one doing the same on the English path. No new logic, no bucket rules, same <code>compute_metrics()</code>. The reranker was untouched.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Bug · Report code</div>
+      <h4>A two-character format string crashed the report after 100 minutes of compute.</h4>
+      <p>The first run finished both reranker passes, then crashed in the report-generation stage with <code>ValueError: Unknown format code 'd' for object of type 'str'</code>. The header format strings used <code>{"n":&gt;4d}</code> where the column label is the string <code>"n"</code>, not an integer.</p>
+      <p class="lesson">Lesson: <strong>the compute finished before the crash and the results were not written.</strong> Report-generation crashes are the most expensive class of bug because they waste the entire upstream computation. The recovery was to add checkpointing — the four rank dicts are pickled to disk immediately after reranking, and a <code>--from-checkpoint</code> flag reloads them in ~5 seconds. Any future report-code change is now a 5-second cost, not a 100-minute one.</p>
+    </div>
+
+    <p>The measurement when it came:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket (Arabic path)</th><th>no-R@5</th><th>R@5</th><th>Delta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cross_lingual_en (A)</td><td class="num">8.2%</td><td class="num">15.8%</td><td class="num">+7.6</td></tr>
+        <tr><td>lexical_ar</td><td class="num">16.3%</td><td class="num">19.1%</td><td class="num">+2.8</td></tr>
+        <tr><td>multi_hop_ar</td><td class="num">33.3%</td><td class="num">33.3%</td><td class="num">0.0</td></tr>
+        <tr><td>roman_urdu (A)</td><td class="num">8.4%</td><td class="num">7.1%</td><td class="num">-1.3</td></tr>
+        <tr><td>semantic_ar</td><td class="num">10.4%</td><td class="num">17.0%</td><td class="num">+6.6</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>The reranker helps on the Arabic path.</strong> Not marginally — meaningfully, on the same buckets the write-up had blamed it for failing on. <code>lexical_ar</code>'s 13-point R@5 / R@10 gap persists with and without the reranker, which means it is a property of the retrieval pool, not the rerank stage. The reranker was not the <code>lexical_ar</code> bottleneck.</p>
+    <p>Then the English path:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket (English path)</th><th>no-R@5</th><th>R@5</th><th>Delta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cross_lingual_en (B)</td><td class="num">20.9%</td><td class="num">26.6%</td><td class="num">+5.7</td></tr>
+        <tr><td>roman_urdu (B)</td><td class="num">17.5%</td><td class="num">5.8%</td><td class="num">-11.7</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>The reranker helps cross_lingual_en path B by 5.7 points and destroys roman_urdu path B by 11.7 points.</strong> And 17.5% — the no-reranker score on roman_urdu path B — is the highest roman_urdu number ever measured, on any path, including the s06d keyword path (7.1%) and the NLLB semantic pipeline (4.5%).</p>
+
+    <h2>Part 5 — Diagnosing the -11.7 before deleting the reranker</h2>
+    <p>Deleting a component that produced a 12-point regression in one path and a 5.7-point gain in another was not obviously correct. The next step was to look at what the reranker was actually being asked to score.</p>
+    <p><code>scripts/diagnose_reranker_inputs.py</code> reads the checkpoint (no compute) and prints, for three Roman-Urdu qids, the query text, the gold verses, the pre-rerank top-5 and post-rerank top-5 with Arabic and English text, and the reranker score for each candidate.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Diagnosis · Reranker on roman_urdu path B</div>
+      <h4>The reranker is being asked to score (Roman-Urdu, Arabic) pairs — a pairing it was never trained on.</h4>
+      <p>The query text is the raw Latin-script Roman-Urdu (not the English keyword mapping, not the NLLB Arabic). The verse text is the Arabic. The reranker scores land in the 1e-5 to 1e-3 range. A working reranker produces scores from 0.5 to 10. These are 3-4 orders of magnitude too small — the model is scoring in a near-uniform noise band, not discriminating candidates.</p>
+      <p>The cleanest evidence is <code>roman_urdu_058</code> (<code>ashab e kahf ka qissa</code>). The gold verse <code>18:9</code> (أصحاب الكهف, "Companions of the Cave") was rank 1 pre-rerank with BM25 12.82. Post-rerank it was demoted to rank 3, displaced by <code>88:1</code> (الغاشية) and <code>85:17</code> (الجنود). The reranker scored <code>18:9</code> at 0.0022 and <code>88:1</code> at 0.0092. The gold verse was scored <strong>four times lower</strong> than a verse with no relation to the query.</p>
+      <p class="lesson">Lesson: measure a component before removing it. Not a pipeline bug — the input pairing is legitimate in principle. The model is simply the wrong tool for this pairing.</p>
+    </div>
+
+    <h2>Part 6 — The routing fix</h2>
+    <p>The Session 6/7 auto-selector had been choosing a path per bucket by whichever path produced the higher R@5. That selector was structurally unable to find the better Roman-Urdu answer, because it compared path B's <em>reranked</em> score (5.8%) against path A's (7.1%), and never considered path B's <em>pre-rerank</em> score (17.5%).</p>
+    <p>The fix was to replace the auto-selector with an explicit per-bucket routing table:</p>
+
+<pre>cross_lingual_en   en [rerank]
+lexical_ar         ar [rerank]
+multi_hop_ar       ar [rerank]
+roman_urdu         en [no_rerank]   <-- new
+semantic_ar        ar [rerank]</pre>
+
+    <p>Any bucket not in the table falls back to the auto-selector and prints a warning, so future buckets require no code change. An invariant check was added: after routing, all non-roman_urdu buckets must match the Session 7f baseline within 2 points R@5. A routing bug cannot silently pass.</p>
+    <p>Result, from <code>--from-checkpoint</code> (no new compute, ~5 seconds):</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>Before</th><th>After</th><th>Delta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cross_lingual_en</td><td class="num">26.6%</td><td class="num">26.6%</td><td class="num">0.0</td></tr>
+        <tr><td>lexical_ar</td><td class="num">19.1%</td><td class="num">19.1%</td><td class="num">0.0</td></tr>
+        <tr><td>multi_hop_ar</td><td class="num">33.3%</td><td class="num">33.3%</td><td class="num">0.0</td></tr>
+        <tr><td>roman_urdu</td><td class="num">7.1%</td><td class="num">17.5%</td><td class="num">+10.4</td></tr>
+        <tr><td>semantic_ar</td><td class="num">17.0%</td><td class="num">17.0%</td><td class="num">0.0</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Roman-Urdu went from 7.1% to 17.5% by removing a step, not adding one.</strong> MRR went from 0.110 to 0.373. R@10 went from 13.0% to 24.7%. The reranker on path B had been leaving 11.7 points of R@5 on the floor since Session 5, invisible because the auto-selector never picked that combination.</p>
+
+    <h2>Part 7 — The noise floor</h2>
+    <p>The reranker is deterministic on these bucket sizes. Across the last three eval runs, the English path was byte-identical, and the Arabic path was identical in the last two (differing by one hit on <code>lexical_ar</code> R@10 in an earlier run). Noise is <strong>&le;1 hit per bucket at n=39 and n=60.</strong> Any change of 1 hit or less is not a real finding.</p>
+    <p>The 11.7-point drop on roman_urdu path B is 12+ hits above noise. It was real. The +4.4 on <code>semantic_ar</code> from the index fix is 6 hits above noise. Also real.</p>
+
+    <h2>Part 8 — Reading 15 failures by hand</h2>
+    <p>This was the highest-value hour of the session.</p>
+    <p>Fifteen questions were selected where zero gold verses appeared in the top-5 of their routed path — 10 from <code>lexical_ar</code> (Arabic path) and 5 from <code>roman_urdu</code> (English path, no rerank). For each, the query, the gold verses, and the top-5 returned were printed with Arabic and English text. Each returned verse was marked <strong>R</strong> (clearly relevant), <strong>P</strong> (plausibly relevant), or <strong>W</strong> (wrong) by a human reviewer.</p>
+    <p>Result: <strong>13 of 15 questions (87%) had at least one R or P in the top-5.</strong> By the decision rule (>50% → gold sets too narrow, R@5 under-counts), the finding is clear.</p>
+    <p>Per-bucket:</p>
+    <ul>
+      <li><strong>lexical_ar (10 sampled failures):</strong> 10/10 had at least one R or P. 32 R, 11 P, 7 W out of 50 returned verses.</li>
+      <li><strong>roman_urdu (5 sampled failures):</strong> 3/5 had at least one R or P. 4 R, 4 P, 17 W out of 25 returned verses.</li>
+    </ul>
+    <p>The clearest example is <code>lexical_ar_012</code> (الإحسان). The retriever returned <code>37:110</code>, <code>31:3</code>, <code>39:34</code>, <code>92:6</code>, <code>55:60</code> — every one of them a verse containing محسنين or الإحسان, every one of them a legitimate answer to "tell me about الإحسان." None of them was in the benchmark's specific gold set (<code>2:195</code>, <code>3:134</code>, <code>4:125</code>, <code>7:56</code>, <code>16:90</code>), also on the topic. R@5 counts the result as a miss. It was not a miss. It was a different set of valid answers.</p>
+
+    <blockquote>
+      <p>The <code>lexical_ar</code> R@5 of 19.1% is not a retrieval-quality number. It is a gold-set-specificity number. The bucket is not broken; the metric is measuring something narrower than what we want to know.</p>
+    </blockquote>
+
+    <p>The checklist recommended reporting <code>hit@5</code> alongside R@5. That number is not computed across all 60 <code>lexical_ar</code> questions in this session — the manual read is the relevance evidence, and a systematic <code>hit@5</code> metric belongs with the next session's agent work. The honest position is: the manual read establishes that relevance is far higher than 19.1% on <code>lexical_ar</code>, and the exact metric is deferred.</p>
+
+    <h2>Part 9 — Three real failures</h2>
+    <p>Not all of the sample was gold-set narrowness. Three questions identified genuine failures with identifiable root causes:</p>
+    <ul>
+      <li><strong><code>lexical_ar_008</code> (بر الوالدين, kindness to parents):</strong> retriever returned four of five verses about fathers <em>in passing</em> (rhetorical questions about ancestral disbelief) or parent-child ties as metaphor. It matched on the root والد / أب / أم without matching on the meaning (the obligation of بر الوالدين as a command). A genuine "matched on root, missed on meaning" failure.</li>
+      <li><strong><code>roman_urdu_024</code> (ghibat kya hai):</strong> English translation is <code>"backbiting"</code>, light stemmer strips <code>-ing</code> producing <code>"backbit"</code>. The Yusuf Ali English corpus contains neither "backbiting" nor "backbit" (the gold verse <code>49:12</code> uses "behind their backs"; <code>104:1</code> uses "backbiter," which <code>-er</code> protection keeps intact). BM25 finds zero matches and returns an arbitrary order from an all-zero score array.</li>
+      <li><strong><code>roman_urdu_025</code> (dua ki qabooliyat):</strong> English translation is <code>"supplication supplicate acceptance accept"</code>. BM25 matches the literal words "accepted" / "supplication" in verses where they are used in a different sense. The gold verses use استجابة / إجابة, which Yusuf Ali renders as "answer," not "accept."</li>
+    </ul>
+    <p>These are noted as findings. They are not on the backlog and not scheduled. The stop rule applies to them too.</p>
+
+    <h2>Part 10 — The stop rule</h2>
+    <p>Session 7e wrote the rule: "after these four steps, freeze retrieval until the verifier is wired into the agent end-to-end."</p>
+    <p>Step 1 found a real bug (reranker on roman_urdu path B) and fixed it. Step 2 measured the noise (&le;1 hit). Step 3 found the metric is wrong for <code>lexical_ar</code> and mixed for <code>roman_urdu</code>, with three identifiable exceptions. Step 4 (GPU) is deferred indefinitely — with checkpointing, report-only runs are seconds, and no further eval changes are needed.</p>
+    <p><strong>Retrieval is frozen.</strong> The final numbers:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Bucket</th><th>n</th><th>R@5</th><th>Routing</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cross_lingual_en</td><td class="num">40</td><td class="num">26.6%</td><td>en [rerank]</td></tr>
+        <tr><td>lexical_ar</td><td class="num">60</td><td class="num">19.1%</td><td>ar [rerank] (gold-set narrow)</td></tr>
+        <tr><td>multi_hop_ar</td><td class="num">2</td><td class="num">33.3%</td><td>ar [rerank] (n=2)</td></tr>
+        <tr><td>roman_urdu</td><td class="num">39</td><td class="num">17.5%</td><td>en [no_rerank]</td></tr>
+        <tr><td>semantic_ar</td><td class="num">39</td><td class="num">17.0%</td><td>ar [rerank]</td></tr>
+      </tbody>
+    </table>
+
+    <p>These are the numbers the agent inherits. If the agent performs well despite these numbers, the retriever is useful enough for the agent's purpose. If the agent performs poorly, the cause will be identifiable from the agent-side logs (verifier false negatives, retrieval misses, query routing bugs), not from R@5.</p>
+
+    <h2>What we did not do</h2>
+    <ul>
+      <li><strong>No GATE-Reranker-V1 swap.</strong> Would have been attempted if the reranker had hurt across the board. It helps on the Arabic path and on cross_lingual_en path B. The measurement said no.</li>
+      <li><strong>No <code>bge-reranker-v2-gemma</code> download.</strong> Same reason.</li>
+      <li><strong>No stemmer fix for <code>roman_urdu_024</code>.</strong> Identified; not on the backlog.</li>
+      <li><strong>No query rewrite for <code>roman_urdu_025</code>.</strong> Same.</li>
+      <li><strong>No fix for <code>lexical_ar_008</code>.</strong> Same.</li>
+      <li><strong>No retriever training.</strong> The retrieval pool is not the failure mode on <code>lexical_ar</code>; the metric is.</li>
+      <li><strong>No GPU migration.</strong> Deferred as part of the stop rule. If the agent work reveals a need for one more retrieval experiment, that is the trigger. Until then, CPU plus checkpoint is enough.</li>
+    </ul>
+
+    <h2>What's next</h2>
+    <p>Wire the verifier into the agent. Run the 196 questions end-to-end. Count three things:</p>
+    <ul>
+      <li><strong>Verified answers:</strong> the agent returned an answer with a citation the verifier confirmed supports the claim.</li>
+      <li><strong>Abstentions:</strong> the agent refused to answer because the verifier could not confirm support.</li>
+      <li><strong>Wrong answers:</strong> the agent returned an answer with a citation the verifier confirmed does <em>not</em> support the claim (the failure the verifier exists to catch).</li>
+    </ul>
+    <p>That count — three numbers — is the reliability promise. Not R@5, not relevance@5, not hit@5. The number of questions the agent gets right with a verified citation, out of 196, is the number that matters.</p>
+    <p>The verifier was built and tested in Chapter 03 (13/13 on its own test set). It has not been wired into the agent. That is the next milestone.</p>
+
+    <h2>Reflections</h2>
+    <p>Three things are true at once.</p>
+    <p><strong>First:</strong> the session found a real bug (the reranker on the Roman-Urdu English path) and fixed it. Roman-Urdu went from 7.1% to 17.5%, the first real improvement to that bucket since the benchmark existed. That is a win, and it came from removing a step, not adding one.</p>
+    <p><strong>Second:</strong> the index asymmetry was a real bug, correctly fixed, and it moved only one bucket. The temptation was to expect the 68%-of-corpus number to produce headline movement. It did not, because the missing roots were the rare ones. The honest reading is narrower than the size of the bug suggested.</p>
+    <p><strong>Third:</strong> the <code>lexical_ar</code> R@5 of 19.1% is not a retriever-quality number. It is a gold-set-specificity number. The bucket is not broken; the metric measures something narrower than what we want to know. That finding changes how the bucket should be reported going forward — and it is the reason the retrieval work stops here rather than chasing a number that was measuring the wrong thing.</p>
+    <p>The lesson from Chapter 04 holds and gets sharper here: <strong>measure the component before blaming it, and measure the metric before trusting it.</strong> The reranker was blamed for <code>lexical_ar</code>'s gap and turned out to be helping it. The 19.1% number was trusted as a retriever-quality measure and turned out to be a gold-set measure. Both corrections came from looking at the actual failures and the actual pre-rerank scores, not from swapping models or widening pools.</p>
+    <p>Retrieval has been the focus for seven sessions. The verifier is the piece that turns a retriever into an agent. The next reliable thing this project can produce is not a better R@5. It is an end-to-end agent that verifies every citation and abstains when it cannot. That is the milestone worth chasing next.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">68.1%</div><div class="lbl">of Corpus Had Hidden Roots</div></div>
+      <div class="metric"><div class="num">17.5%</div><div class="lbl">roman_urdu R@5 (was 7.1%)</div></div>
+      <div class="metric"><div class="num">13/15</div><div class="lbl">Failures Were Gold-Set Narrow</div></div>
+      <div class="metric"><div class="num">&le;1</div><div class="lbl">Hit Noise Floor (n=39, n=60)</div></div>
+    </div>
+
+    <p>Next: the verifier wired into the agent, 196 questions end-to-end, three numbers — verified, abstained, wrong. That is the reliability promise. Not R@5.</p>
+    <p>One retrieval-metric at a time, and then the agent.</p>
+
+    <hr>
+    <p style="font-size:14px;">New to the Ahmad-AI build? Start with <a href="engineering-log.html" style="color:var(--amber-soft);">Chapter 01: Guardrails &amp; Hallucination Prevention &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems — and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad &mdash; Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
