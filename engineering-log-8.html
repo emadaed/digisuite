@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log 08: The LLM Selector Failed; the Gate Ships | Muhammad Ahmad</title>
+<meta name="description" content="How four local LLMs failed as Quranic relevance judges, why the failure was a capability floor rather than a prompt problem, and how a two-layer scope-routing gate shipped at the pre-registered threshold.">
+<meta name="keywords" content="Quran Retrieval, LLM Abstention, Scope Routing, Gate, Arabic NLP, RAG, Reliability Promise, Islamic AI, Evaluation">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-8.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log 08: The LLM Selector Failed; the Gate Ships">
+<meta property="og:description" content="Four local models tested as abstainers. Zero correct abstentions on out-of-corpus questions across 24 draws. A two-layer scope-routing gate replaces the failed hypothesis and ships at the pre-registered threshold: 8/10 catches, 0/4 false positives.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-8.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log 08: The LLM Selector Failed; the Gate Ships",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-8.html",
+  "about": ["Quran Retrieval", "LLM Abstention", "Scope Routing", "Arabic NLP", "RAG", "Reliability Promise"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  .results-table{ width:100%; border-collapse:collapse; margin:20px 0 26px; font-size:14.5px; }
+  .results-table th{ text-align:left; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding:10px 8px; font-weight:500; }
+  .results-table td{ padding:10px 8px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .results-table td:first-child{ color:var(--text); }
+  .results-table td.num{ font-family:var(--mono); color:var(--amber-soft); }
+  .results-table tr:last-child td{ border-bottom:none; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log 08</b></span>
+    <span>SUBJECT: <b>LLM abstention — failed hypothesis, shipped gate</b></span>
+    <span>STATUS: <b>Gate PASS · 8/10 catches · 0/4 false positives · 4 models rejected</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Engineering Log</a>
+      <a href="engineering-log-8.html" class="current">Log 08</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 06</span>
+    <span class="eyebrow">Engineering Log · Ahmad-AI</span>
+    <h1>The LLM Selector Failed; the Gate Ships</h1>
+    <p class="lede">Chapter 05 ended with a working verifier and a stop rule: no more retrieval work until the agent abstains on unanswerable questions. This is the chapter where four local LLMs failed at that task in 24 draws with zero correct abstentions, and where a two-layer scope-routing gate replaced the failed hypothesis and shipped at the threshold pre-registered before the run.</p>
+    <div class="tagrow">
+      <span class="tag"><b>0/6</b> LLM abstentions on out-of-corpus</span>
+      <span class="tag"><b>8/10</b> Gate catches (Group 1)</span>
+      <span class="tag"><b>0/4</b> Answerable false positives (Group 2B)</span>
+      <span class="tag"><b>4</b> Models tested, all rejected</span>
+      <span class="tag"><b>15/15</b> Verifier tests after 2:282 fix</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html">Chapter 01: Guardrails</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Search</a>
+      <a href="engineering-log-5.html">Chapter 03: Building Ahmad-Eval</a>
+      <a href="engineering-log-6.html">Chapter 04: Scaling to 196</a>
+      <a href="engineering-log-7.html">Chapter 05: Reranker, Index, Metric</a>
+      <a href="engineering-log-8.html" class="active">Chapter 06: The Gate Ships</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The setup</h2>
+    <p>Chapter 05 ended with a number that had to be faced. When the template-drafter agent ran the 196-question benchmark, every single out-of-corpus question — all 16 of them — was answered with a real, verified verse. The verifier did exactly what it was designed to do: confirm that the quoted text matches the canonical text of the cited verse. It is a canonicality check. It is not a relevance check. It cannot, in principle, distinguish "a real verse the question is asking about" from "a real verse that happens to share a keyword."</p>
+    <p>That is the false-answer (FA) rate the reliability promise cares about. It was 100%. The stop rule was activated: retrieval frozen, and the next reliable thing the project could produce was an end-to-end pipeline with a support-checking layer.</p>
+    <p>This chapter is what happened when we tried to build that layer with a small local language model — and what happened when that approach was rejected by the evidence.</p>
+
+    <h2>Part 1 — The hypothesis</h2>
+    <p>The hypothesis was straightforward. An LLM can read a question, read five candidate verses, and pick the one that answers the question — or abstain if none does. In the pipeline shape:</p>
+    <ul>
+      <li>The frozen retriever returns the top-5 verses for a question.</li>
+      <li>The LLM drafts a "citation" that names one verse and quotes it — or refuses.</li>
+      <li>The verifier confirms the quote is canonical text — or rejects it.</li>
+      <li>The template quotes only if the verifier confirms.</li>
+    </ul>
+    <p>If the LLM can reliably abstain on questions the Quran does not answer, the false-answer rate drops to a small number. The reliability promise becomes real.</p>
+    <p>The hypothesis was plausible. Small local models have demonstrated strong classification abilities. The task — "does this verse answer this question?" — looked like a classification problem.</p>
+    <p>It is not. It is a relevance judgment, and that is a different cognitive task.</p>
+
+    <h2>Part 2 — The four-model diagnostic</h2>
+    <p>Four models were tested via Ollama, on CPU, with `command-r7b-arabic:7b` (Cohere, Arabic-focused, 8B params) as the primary candidate. Three others were tested on a smaller set of hand-prompt questions to check whether the failure was specific to one model or universal:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Model</th><th>Format test</th><th>World Cup abstain</th><th>Horse-meat abstain</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>command-r7b-arabic</td><td>Fails (hallucinated quotes)</td><td>ABSTAIN</td><td>SELECT (wrong)</td><td>Partial only</td></tr>
+        <tr><td>llama3.1</td><td>Fails (hallucinated quotes)</td><td>ABSTAIN</td><td>SELECT (wrong)</td><td>Partial only</td></tr>
+        <tr><td>llama3.2:3b</td><td>Fails</td><td>Prose (no format)</td><td>Prose</td><td>Rejected</td></tr>
+        <tr><td>phi3</td><td>Fails</td><td>SELECT</td><td>SELECT</td><td>Rejected</td></tr>
+      </tbody>
+    </table>
+
+    <p>Two findings from the diagnostic mattered more than the table:</p>
+    <p><strong>First, no model would abstain on a horse-meat question</strong> where the Quran has verses about food prohibitions. The question asks for a ruling that the Quran does not provide (the specific ruling comes from hadith); every model that could format properly picked a "closest" verse. That is the subtype (b) failure — the topic appears, the ruling doesn't — and it is universal across the four models tested.</p>
+    <p><strong>Second, the World Cup question — clearly off-topic — was abstained by two of four models.</strong> Subtype (a), which asks about something the Quran has no verse about whatsoever, was reachable. Subtype (b), which asks about something whose topic appears in the Quran but whose answer doesn't, was not.</p>
+
+    <blockquote><p>The failure was not "the model can't abstain." It was "the model can't abstain when the topic is present." That is a different and harder task.</p></blockquote>
+
+    <h2>Part 3 — The v1 and v2 selector tests</h2>
+    <p>Two full sample runs were made on `command-r7b-arabic`, against a 12-question subset of the benchmark — 6 answerable and 6 out-of-corpus. The point was to measure abstention and position stability at a scale larger than the hand prompts.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Test 1 · v1</div>
+      <h4>Uthmani text in the prompt, reversed candidate order.</h4>
+      <p>Parsed 12/12. Position stability measured at 1/12 by verse reference — but the "reversed" test preserves the middle item of a 5-item list, so it was a position-transform test, not a position test. The 1/12 was an artifact of the test design, not a measurement of the model.</p>
+      <p>Abstention on the 6 out-of-corpus questions: <strong>0/6</strong>.</p>
+      <p class="lesson">Lesson: "reversed order" and "shuffled order" are not the same thing. Reversal preserves the middle item; only a shuffle removes position as a hint.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Test 2 · v2</div>
+      <h4>Simplified text in the prompt, shuffled candidate order with two seeds.</h4>
+      <p>The prompt was rebuilt with simplified Arabic — the same source the verifier compares against, so one less file dependency. The candidate order was shuffled per-question with a fixed seed, and two seeds were run side by side.</p>
+      <p>Parsed 12/12 in each seed. Position stability improved to 7/12 by verse reference, with 3 of the 5 differences being semantically equivalent picks (both verses answer the question) — 10/12 stable for meaning, 2/12 genuinely position-sensitive on non-equivalent picks.</p>
+      <p>Abstention on the 6 out-of-corpus questions: <strong>0/6</strong>.</p>
+      <p class="lesson">Simplified text removed the diacritics problem. Shuffle removed the position-hint problem. Both corrections were necessary. Neither fixed abstention.</p>
+    </div>
+
+    <p>24 draws across the two seeds (2 × 12). Zero correct abstentions on any of the six out-of-corpus questions, in either text source, in either shuffled order.</p>
+    <p>The 6-question sample's strict precision on answerable questions was 3/6 = 50% in each seed. That number is a smoke-test observation, not a headline result. The 196-run was not performed. It belongs in the record as: on this 6-question sample, the model answered 3 of 6 answerable questions with a gold verse — the same as the template drafter's top-1 hit rate. The verifier confirmed every quote. The selection layer added no signal.</p>
+
+    <h2>Part 4 — The capability floor</h2>
+    <p>The honest reading, after two corrections and 24 draws, is that this is a capability floor at 7B on this hardware for this task. Not a prompt problem. Not a text-source problem. Not a position-hint problem. A capability floor.</p>
+    <p>The task is a relevance judgment: "given a question and a candidate verse, does this verse answer this question?" It requires comparing two texts for a support relation. Small local models do not reliably do this. That is not a criticism of them — it is a description of what they are good at. Classification is easy; relevance judgment is hard.</p>
+    <p>The 7B model's behavior is consistent with that description: it picks a topically-adjacent verse every time, because "topically-adjacent" is what its training reliably surfaces. It does not distinguish "shares a keyword" from "answers the question."</p>
+
+    <blockquote><p>The LLM-selector hypothesis is not supported in this sample: one model fully tested, one prompt style, n=6, 24 draws, zero abstentions. It is not rejected for all models, all prompts, all n. A different model or a larger n could still support it. That is a separate experiment, not this session.</p></blockquote>
+
+    <h2>Part 5 — The fallback: two-layer scope routing</h2>
+    <p>The fallback replaced "LLM judges relevance" with "gate routes scope." Two layers, each doing a task appropriate to its capability.</p>
+
+    <h3>Layer 1 — LLM intent classifier</h3>
+    <p>The question text alone, no verses, no retrieval. The model classifies into one of four categories: <code>ruling</code>, <code>number</code>, <code>biography</code>, <code>topic</code>. If the category is <code>ruling</code>, <code>number</code>, or <code>biography</code>, the gate fires. If it is <code>topic</code>, the gate does not fire.</p>
+    <p>The four one-line category definitions are the load-bearing part. Each names what the question is asking <em>for</em>, not what the question mentions. And a single rule ties them together:</p>
+    <blockquote><p>If more than one applies, choose the category that names what the question is actually asking FOR, not the topic it is about.</p></blockquote>
+    <p>Without that rule, "ما حكم صلاة الوتر" and "كم عدد ركعات صلاة الوتر" both classify as <code>topic</code> (witr is a topic) and neither gate fires. With the rule, the model reads the pragmatic purpose, not the surface topic. The task is classification, and classification is what small models do well.</p>
+
+    <h3>Layer 2 — keyword phrase backstop</h3>
+    <p>A regex against a normalized question. The phrase list includes Arabic triggers (<code>ما حكم</code>, <code>هل يجوز</code>, <code>هل يحل</code>, <code>كم عدد</code>, <code>كم ركعة</code>, <code>ما مقدار</code>, <code>ما نصاب</code>, <code>ماذا (أكل|فعل|قال) النبي</code>) and Roman-Urdu / English equivalents. It does <em>not</em> include <code>فرض</code>, <code>واجب</code>, <code>سنة</code>, <code>شرط</code>, <code>شروط</code>, <code>كيفية</code>, <code>حلال</code>, or <code>حرام</code> as single-word triggers — because those appear in answerable questions like <em>roza kab farz hua</em> (when was fasting made obligatory) which 2:183 answers directly.</p>
+    <p>Layer 2 exists as a rule-based backstop against Layer 1's occasional mis-classification. It is the reason the gate fires reliably on rule-start questions even when the classifier's categories get fuzzy.</p>
+
+    <h3>Gate behavior on the user side</h3>
+    <p>When the gate fires, the scope message is shown and <strong>verses are withheld by default</strong>. The message tells the user the question asks for something the Quran alone does not provide, offers to show "verses about [topic]" on request, and points to a qualified scholar for rulings. This is the opposite of the template drafter's failure mode — the drafter's behavior was to show a wrong verse next to a ruling question, making it look like the answer. The gate does not do that. If the user follows up with "verses about [topic]," they get the verses with a clear label: <em>"verses on this topic — they do not provide a ruling."</em></p>
+
+    <blockquote><p>The gate is a scope router, not a capability claim. It does not say "I cannot answer this." It says "the Quran does not provide this." It still offers the verses on request. The user learns where the boundary is.</p></blockquote>
+
+    <h2>Part 6 — The 2:282 fix</h2>
+    <p>Independently of the gate work, the reliability promise required a fix that had been latent since Chapter 05. <code>safe_answer._find_quote_after</code> searched a fixed 800-character window after the <code>(S:A)</code> marker to find the closing quote. Verse 2:282 is the longest verse in the Quran — 1189 characters of Uthmani text. A draft quoting it verbatim is 1199 characters. The window could not reach the closing quote.</p>
+    <p>The bug was found by a failing test on the pre-7i code (status <code>no_quote</code>, <code>safe_answer</code> refused the draft), then fixed, then the same test passed (<code>verified</code>, <code>exact Uthmani match</code>). The fix removes the fixed window and searches to end-of-draft. On malformed drafts the behavior is unchanged — no closing quote means no match means <code>no_quote</code>, same as before.</p>
+    <p>The verifier test suite is now 15/15 (13 original + 2 new for 2:282 full and 2:282 truncated). The 2:282 fix is independent of the gate — it will not need revisiting regardless of what happens to the gate, the LLM selector, or the benchmark.</p>
+
+    <h2>Part 7 — The pre-registered pass rule</h2>
+    <p>The pass rule was written before the 30-question run, in the frozen file <code>s07i_gate_eval_30.json</code>. It was not moved after the run.</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Group</th><th>Description</th><th>Threshold</th><th>Pass condition</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Group 1</td><td>Out-of-scope, no rule-start words</td><td>≥ 8/10 catches</td><td>Must hold</td></tr>
+        <tr><td>Group 2B</td><td>Answerable, no rule-start words</td><td>≤ 2/4 false positives</td><td>Must hold</td></tr>
+        <tr><td>Group 2A</td><td>Answerable, WITH rule-start words</td><td>Reported only</td><td>Design-known cost</td></tr>
+        <tr><td>Group 3</td><td>Natural, six buckets, hand-classified</td><td>Reported only</td><td>Per-file hand_classification</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Part 8 — The 30-question result</h2>
+    <p>The gate evaluation ran the frozen 30-question set once. The result, verbatim:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Group</th><th>Result</th><th>Threshold</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Group 1 (out-of-scope)</td><td class="num">8/10 catches</td><td class="num">≥ 8/10</td><td>PASS (boundary)</td></tr>
+        <tr><td>Group 2B (answerable, no trigger)</td><td class="num">0/4 false positives</td><td class="num">≤ 2/4</td><td>PASS (clean)</td></tr>
+        <tr><td>Group 2A (answerable, with trigger)</td><td class="num">4/4 fired</td><td>reported only</td><td>Design-known UX cost</td></tr>
+        <tr><td>Group 3 (natural)</td><td class="num">12/12 correct</td><td>reported only</td><td>10 hand_neutral + 2 catch</td></tr>
+        <tr><td><strong>Overall</strong></td><td class="num">14/30 fired</td><td>—</td><td><strong>PASS</strong></td></tr>
+      </tbody>
+    </table>
+
+    <p>Trigger source breakdown: <code>layer1_only</code> 10, <code>layer2_only</code> 0, <code>both</code> 4, <code>neither</code> 16.</p>
+
+    <h3>The two Group 1 misses — audit trail</h3>
+    <p>The two misses are the honest failure cases, and both are the same subtype:</p>
+    <ul>
+      <li><strong>g1_05</strong> — <em>أريد أن أعرف عن صلاة الوتر</em> ("I want to know about witr prayer"). Layer 1 returned <code>topic</code>. Layer 2 had no trigger. The gate did not fire.</li>
+      <li><strong>g1_06</strong> — <em>أخبرني عن صيام يوم عرفة</em> ("tell me about Arafah fasting"). Layer 1 returned <code>topic</code>. Layer 2 had no trigger. The gate did not fire.</li>
+    </ul>
+    <p>Both are subtype (b) — the topic appears in the Quran, the ruling does not. Both are phrased as topic-requests ("about X"), not ruling-requests ("what is the ruling on X"), so neither Layer 1's category rules nor Layer 2's phrase list had anything to fire on. This is the design-anticipated hard case for Layer 1, and it is exactly two misses. That is the boundary.</p>
+
+    <h2>Part 9 — The two caveats, as formal fields</h2>
+    <p>Both caveats are recorded as structured fields in <code>results/s07i_gate_eval_summary.json</code>, not as prose around the verdict.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Caveat 01 · Group 1 at boundary</div>
+      <h4>8/10, not 9/10. The two misses are named subtype (b) failures.</h4>
+      <p>The two missed questions are listed above with question text and returned category. This is the audit trail for the subtype (b) failure. A future session could add a subtype (b) example to the Layer 1 prompt — "a question like 'I want to know about X' where X's ruling is not in the Quran should be classified <code>ruling</code>, not <code>topic</code>" — that might move 8/10 to 9/10 or 10/10. Not this session. A future session, if the future 30-fresh-question evaluation surfaces a specific diagnosable subtype (b) failure, could run that amendment.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Caveat 02 · Layer 2 over-firing on Group 2A</div>
+      <h4>4/4 fired. Design-known UX cost, decision pending.</h4>
+      <p>Every answerable question with a rule-start phrase fired the gate. A user asking "هل يجوز الصيام في رمضان؟" gets the scope message even though the Quran answers it in 2:183–2:187. This is Layer 2 working as designed — it matches phrases, not meaning — and it is the documented UX cost of having a rule-based backstop. Three options for the next session: keep Layer 2 as-is (accept the UX cost for the more reliable out-of-scope catches it enables), narrow its phrase list (drop <code>هل يجوز</code>, which over-fires most often), or drop Layer 2 entirely and let Layer 1 be the only trigger. Each is a trade-off.</p>
+    </div>
+
+    <h2>Part 10 — What ships</h2>
+    <p>The gate ships at the frozen thresholds, with both caveats recorded. The full shipped surface:</p>
+    <ul>
+      <li><strong>The two-layer scope-routing gate.</strong> Layer 1 classifies question intent; Layer 2 backstops with rule-start phrases.</li>
+      <li><strong>The scope message.</strong> Gated questions get a message that names what the question is asking for, offers verses on request, and points to a qualified scholar for rulings. Verses withheld by default.</li>
+      <li><strong>The <code>2:282</code> verifier fix.</strong> Longest verse in the Quran now survives <code>safe_answer</code>'s quote extraction. Test-proven by failing-test-first.</li>
+      <li><strong>The frozen retriever</strong>, unchanged from Chapter 05. Hit@5 = 50.6% on the 180 answerable questions.</li>
+      <li><strong>The verified-quote guarantee.</strong> Python inserts the Uthmani text from <code>canonical_quran.db</code>; the verifier confirms it matches canonical; no LLM-generated quote reaches the verifier.</li>
+    </ul>
+
+    <h2>Part 11 — What does not ship, deferred to the next session</h2>
+    <ul>
+      <li><strong>Narrowing Layer 2's phrase list.</strong> The decision whether to keep it as-is, narrow it, or drop it is a design trade-off. Pending.</li>
+      <li><strong>Prompt tuning of Layer 1 for subtype (b).</strong> A future session, if the fresh 30-question benchmark surfaces a specific diagnosable failure, could run it.</li>
+      <li><strong>The backup per-verse binary design.</strong> Forced YES/NO judgment per candidate, not "pick one of five." The structurally different remaining approach if Layer 1 + Layer 2 both fail on the fresh 30. Journaled, not built.</li>
+      <li><strong>Any further attempt to make a local LLM abstain at this task.</strong> The evidence is four models tested, zero correct abstentions on subtype (b), across 24 draws for the fully-tested model. Asking again on this hardware is not a good use of a session.</li>
+    </ul>
+
+    <h2>Part 12 — The next milestone</h2>
+    <p>Write 30 fresh questions in the benchmark repo. Hand-review the gold verses against Uthmani text. Freeze the 30. Run once through the shipped pipeline — retriever + gate + verifier. Report one number with its confidence interval: n=30 gives wide bars, ±15 points roughly. That number is the publishable one. Everything before it — the 196-question benchmark, the hit@5 metric, the 7i selector tests, the gate evaluation — is internal calibration.</p>
+    <p>The frozen 30-question gate evaluation was the internal calibration of the gate itself. The fresh 30-question benchmark is the external measurement of the whole system. They are different questions. This chapter closes the first; the next chapter opens the second.</p>
+
+    <h2>Reflections</h2>
+    <p>Two things are true at once again.</p>
+    <p><strong>First: the LLM selector failed as an abstainer.</strong> Four models tested; the one that passed the basic format and abstention prompts was fully tested on the sample and did not abstain, in either text source, in either shuffled order, on any of the six out-of-corpus questions. Two corrections — Uthmani text to simplified text, reversed order to shuffled order — were both necessary and both insufficient. That is a capability floor at 7B on this hardware, for this task, at this n. The project does not get to pretend otherwise.</p>
+    <p><strong>Second: the gate is a real improvement over the template drafter's 100% false-answer rate.</strong> The gate catches 8 of 10 out-of-scope questions without any verse-display confusion. The template drafter caught 0 of 16 and displayed a wrong verse every time. The two numbers are not comparable in kind — the template drafter's 100% was a guarantee of the wrong thing, and the gate's 8/10 is a measured capability of the right thing. But the direction of travel is clear: the gate is the first thing in this project that routes correctly on the honest failure case.</p>
+    <p>The two-layer structure works because each layer does a task appropriate to its capability. Layer 1 classifies; classification is what 7B models do well, and this one does it correctly on 8/10 out-of-scope and 4/4 answerable-non-trigger questions. Layer 2 matches phrases; regex does that perfectly. The failure in 7i was asking a 7B model to do relevance judgment — "does this verse answer this question?" — which it does poorly. The gate asks the model a different, easier question, and the model answers the easier question correctly enough to ship.</p>
+    <p>The subtype (b) misses are honest. The gate is not perfect. But 8/10 is the honest number, and the two misses have a name: topic-framed out-of-corpus. When the gate is amended, the amendment addresses a named failure with a specific cause, not a vague sense of "make it better."</p>
+    <p>The 2:282 fix, landed by failing-test-first, is a small durable win. The longest verse in the Quran now survives <code>safe_answer</code>'s extraction, and the test proves it. It will not need revisiting.</p>
+    <p>The project's discipline held. Pre-registered pass rule, frozen 30-question set, no tuning after seeing results, caveats recorded as formal fields in the report. The gate ships on the evidence, at the boundary on Group 1, cleanly on Group 2B, with both caveats named. That is what an honest result looks like when the honest result is "the gate works at the threshold we set before we knew what the number would be."</p>
+    <p>One thing that changed this session, and that the journal records because the project's planning depends on it: the "last LLM experiment on this hardware" is a planning constraint, not a prohibition. If the 30 fresh questions reveal a specific, diagnosable failure that a further LLM experiment would fix — and only an LLM experiment would fix — we run that experiment. The constraint exists to stop iterating on a failed hypothesis, not to forbid all future LLM work. The gate ships now; what ships after the 30 fresh questions is decided by the 30 fresh questions.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">8/10</div><div class="lbl">Gate Catches, Out-of-Scope</div></div>
+      <div class="metric"><div class="num">0/4</div><div class="lbl">Answerable False Positives</div></div>
+      <div class="metric"><div class="num">15/15</div><div class="lbl">Verifier Tests (After 2:282 Fix)</div></div>
+      <div class="metric"><div class="num">0/6</div><div class="lbl">LLM Abstentions, 24 Draws</div></div>
+    </div>
+
+    <p>Next: 30 fresh questions in the benchmark repo, one run through the shipped pipeline, one number with a confidence interval. That is the publishable number. Everything before it — 196, hit@5, 7i, the gate — is internal calibration.</p>
+    <p>One honest layer at a time.</p>
+
+    <hr>
+    <p style="font-size:14px;">New to the Ahmad-AI build? Start with <a href="engineering-log.html" style="color:var(--amber-soft);">Chapter 01: Guardrails &amp; Hallucination Prevention &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems — and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad &mdash; Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
