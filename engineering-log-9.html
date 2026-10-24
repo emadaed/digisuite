@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log 09: The Pipeline Does Not Generalize — and That's the Finding | Muhammad Ahmad</title>
+<meta name="description" content="The closing chapter of the Ahmad-AI engineering log. 196 calibration questions pass. 36 fresh questions fail the pre-registered thresholds. The benchmark is published on Hugging Face with both the passing and the failing numbers.">
+<meta name="keywords" content="Quran Retrieval, Benchmark, Evaluation, Generalization, Honest Measurement, Arabic NLP, RAG, Islamic AI, Hugging Face, CC-BY-4.0">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-9.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log 09: The Pipeline Does Not Generalize — and That's the Finding">
+<meta property="og:description" content="The reference pipeline verifies 32/180 on the calibration set and 3/30 on the fresh set. Both numbers published. A benchmark that only documents the wins is a marketing artifact, not a benchmark.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-9.html">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Engineering Log 09: The Pipeline Does Not Generalize — and That's the Finding",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-9.html",
+  "about": ["Quran Retrieval", "Benchmark", "Generalization", "Evaluation", "Arabic NLP", "RAG"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  .article-body{ padding:56px 0 30px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body h3{ font-family:var(--display); font-size:17px; margin:30px 0 12px; color:var(--amber-soft); }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+  .article-body em{ color:var(--amber-soft); font-style:normal; }
+  .article-body ul{ color:var(--muted); font-size:16px; padding-left:22px; margin:0 0 18px; }
+  .article-body li{ margin-bottom:10px; }
+  .article-body li strong{ color:var(--text); }
+  .article-body blockquote{
+    margin:24px 0; padding:16px 20px; border-left:3px solid var(--amber); background:var(--panel);
+    border-radius:0 6px 6px 0; color:var(--text); font-size:15.5px;
+  }
+  .article-body blockquote p{ margin:0; color:var(--text); }
+  .article-body pre{
+    background:var(--panel-2); border:1px solid var(--border); border-radius:8px; padding:20px;
+    overflow-x:auto; margin:0 0 22px; font-family:var(--mono); font-size:13px; line-height:1.6; color:var(--amber-soft);
+  }
+  .article-body code{ font-family:var(--mono); }
+  .article-body p code{ background:var(--panel-2); border:1px solid var(--border); border-radius:3px; padding:2px 6px; font-size:14px; color:var(--amber-soft); }
+  .article-body hr{ border:none; border-top:1px solid var(--border); margin:44px 0; }
+
+  .bug-card{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 22px; margin:20px 0; }
+  .bug-card .bug-label{ font-family:var(--mono); font-size:11px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; }
+  .bug-card h4{ font-family:var(--display); font-size:16px; margin:0 0 12px; color:var(--text); }
+  .bug-card p{ font-size:15px; margin:0 0 10px; }
+  .bug-card p:last-child{ margin-bottom:0; }
+  .bug-card .lesson{ color:var(--amber-soft); font-family:var(--mono); font-size:13px; }
+
+  .tier-card{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:16px 20px; margin:14px 0; }
+  .tier-card h4{ font-family:var(--display); font-size:15px; margin:0 0 6px; color:var(--text); }
+  .tier-card .tier-status{ font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+  .tier-card .tier-status.done{ color:#7FBF7F; }
+  .tier-card .tier-status.partial{ color:var(--amber-soft); }
+  .tier-card .tier-status.none{ color:#C97A7A; }
+  .tier-card p{ font-size:14.5px; margin:0; color:var(--muted); }
+
+  .metrics-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin:26px 0; }
+  .metric{ background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:18px 20px; }
+  .metric .num{ font-family:var(--display); font-size:28px; color:var(--amber-soft); font-weight:700; line-height:1; }
+  .metric .lbl{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-top:8px; }
+
+  .results-table{ width:100%; border-collapse:collapse; margin:20px 0 26px; font-size:14.5px; }
+  .results-table th{ text-align:left; font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border); padding:10px 8px; font-weight:500; }
+  .results-table td{ padding:10px 8px; border-bottom:1px solid var(--border); color:var(--muted); }
+  .results-table td:first-child{ color:var(--text); }
+  .results-table td.num{ font-family:var(--mono); color:var(--amber-soft); }
+  .results-table tr:last-child td{ border-bottom:none; }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Engineering Log 09</b></span>
+    <span>SUBJECT: <b>Ahmad-AI — closing chapter</b></span>
+    <span>STATUS: <b>Benchmark published · fresh-set FAIL documented · series closed</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Engineering Log</a>
+      <a href="engineering-log-9.html" class="current">Log 09</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Chapter 07</span>
+    <span class="eyebrow">Engineering Log · Ahmad-AI · Closing Chapter</span>
+    <h1>The Pipeline Does Not Generalize — and That's the Finding</h1>
+    <p class="lede">Chapter 06 ended with a two-layer gate that passed its frozen 30-question internal test at 8/10 catches and 0/4 false positives. This is the chapter where the same pipeline was run against 36 questions it had never seen, failed its pre-registered thresholds on both conditions, and the benchmark was published anyway — with the passing and the failing numbers, side by side. This is also the closing chapter of the series.</p>
+    <div class="tagrow">
+      <span class="tag"><b>232</b> questions published</span>
+      <span class="tag"><b>3/30</b> verified on fresh (CI95 3.5%–25.6%)</span>
+      <span class="tag"><b>2/6</b> out-of-scope false-answer on fresh</span>
+      <span class="tag"><b>15/15</b> verifier test coverage</span>
+      <span class="tag"><b>CC-BY-4.0</b> published on Hugging Face</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="engineering-log.html">Chapter 01: Guardrails</a>
+      <a href="engineering-log-2.html">Chapter 02: Multilingual Search</a>
+      <a href="engineering-log-5.html">Chapter 03: Building Ahmad-Eval</a>
+      <a href="engineering-log-6.html">Chapter 04: Scaling to 196</a>
+      <a href="engineering-log-7.html">Chapter 05: Reranker, Index, Metric</a>
+      <a href="engineering-log-8.html">Chapter 06: The Gate Ships</a>
+      <a href="engineering-log-9.html" class="active">Chapter 07: Generalization</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>Where Chapter 06 left off</h2>
+    <p>Chapter 06 ended with the gate passing its frozen 30-question internal test at <strong>8/10 out-of-scope catches, 0/4 answerable false positives</strong>. The pass rule had been written before the run, frozen in the eval file, and not moved after the numbers were in. That was the internal calibration of the gate itself. It was not the publishable number.</p>
+    <p>The publishable number was always going to require a fresh set — questions the pipeline had never seen, contributed by someone other than the pipeline's designer, phrased in ways the pipeline was not tuned on. That's what this chapter is. It's also where the series ends: the benchmark was published on Hugging Face with both the passing numbers and the failing numbers, and the project closed with the honest result instead of the flattering one.</p>
+
+    <h2>Part 1 — The 196 calibration (Session 7j)</h2>
+    <p>Before the fresh set was run, the pipeline was run end-to-end on all 196 benchmark questions. These are the numbers it produced, all on questions whose phrasing the pipeline had been tuned against:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Outcome</th><th>Answerable (n=180)</th><th>Out-of-scope (n=16)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Verified (gold citation confirmed)</td><td class="num">32</td><td class="num">—</td></tr>
+        <tr><td>Abstained (gate fired)</td><td class="num">33</td><td class="num">16</td></tr>
+        <tr><td>Wrong (cited off-gold verse)</td><td class="num">115</td><td class="num">0</td></tr>
+      </tbody>
+    </table>
+
+    <p>The pipeline ran deterministically across re-runs. Every draft the gate let through was verified against the canonical text and passed. Every out-of-scope question the gate fired on was abstained. The 196 numbers looked like a working pipeline.</p>
+    <p>They were calibration. They were produced on questions the pipeline was tuned against. They were not the number the project could publish as a claim about a system's behavior on questions it had never seen.</p>
+
+    <blockquote><p>Calibration numbers are a system's behavior on questions it was tuned against. They measure what the system can do at all. They do not measure whether the system generalizes.</p></blockquote>
+
+    <h2>Part 2 — The 36 fresh questions (Session 7k)</h2>
+    <p>Thirty-six fresh questions were contributed by an external model, hand-reviewed, and frozen in the benchmark before any run. They were distributed across the six buckets (6 questions per bucket), phrased in the full-prose register that the pipeline had not been tuned on. They were added to the benchmark repo, and the benchmark grew from 196 to <strong>232 questions</strong>.</p>
+    <p>The pass rule was written before the run:</p>
+    <ul>
+      <li><strong>(a)</strong> Out-of-scope false-answer rate must be ≤ 1/6.</li>
+      <li><strong>(b)</strong> The 95% Wilson lower bound on the verified rate on answerable questions must be ≥ 10%.</li>
+    </ul>
+
+    <p>Both conditions were frozen in the scope message and the benchmark file before the run. Both must hold for the pipeline to pass.</p>
+
+    <p>The result:</p>
+
+    <table class="results-table">
+      <thead>
+        <tr><th>Condition</th><th>Observed</th><th>Threshold</th><th>Verdict</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>(a) Out-of-scope false-answer</td><td class="num">2/6 = 33.3%</td><td class="num">≤ 1/6 (16.7%)</td><td>FAIL</td></tr>
+        <tr><td>(b) Verified Wilson lower bound</td><td class="num">3.5% (3/30, CI95 3.5–25.6%)</td><td class="num">≥ 10%</td><td>FAIL</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>Both conditions failed. Not marginally.</strong> The verified rate on answerable fresh questions was 10.0% — 3 out of 30 — and the honest reading of a 3/30 count is that the confidence interval's lower bound is 3.5%, well below the pre-registered threshold. The out-of-scope false-answer rate was 33.3%, twice the threshold.</p>
+
+    <blockquote><p>The pipeline does not generalize to fresh questions at the pre-registered thresholds. That is a finding, not a failure of the run.</p></blockquote>
+
+    <h2>Part 3 — The failure analysis</h2>
+    <p>The raw numbers on their own are not actionable. The failure-mode analysis (`s07k_analyze_failures.py`, read-only, no LLM re-run) broke the 36 questions into four categories. The dominant failure was not where we expected it.</p>
+
+    <div class="bug-card">
+      <div class="bug-label">Category A · Out-of-scope gate misses (2/6)</div>
+      <h4>Both subtype (b) topic-framed. Consistent with the 196's rate.</h4>
+      <p>Two out-of-scope questions were classified as <code>topic</code> by Layer 1, passed the Layer 2 phrase check with no match, and the agent answered them with a canonical verse. The mechanism is the same subtype (b) topic-framed question that failed at 4/16 = 25% on the 196. On the fresh set it failed at 2/6 = 33%. Both rates are within one question. <strong>The mechanism is stable across the calibration and fresh sets. This is not a fresh-set-specific failure; it is the failure mode the gate was known to make.</strong></p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Category B · Answerable gate over-firing (17/30)</div>
+      <h4>The dominant failure. 57% on fresh vs 18% on calibration.</h4>
+      <p>17 of 30 answerable fresh questions were gate-fired before retrieval. That is 57%, vs 33/180 = 18% on the 196. The fresh over-firing rate is three times the calibration rate. Every one was classified as <code>ruling</code> by Layer 1; 16 of 17 had no Layer 2 phrase match at all. <strong>The mechanism is Layer 1's classification prompt, not Layer 2. The prompt was tuned against the 196's more direct phrasing and does not generalize to the fresh set's prose-like phrasing.</strong></p>
+      <p class="lesson">The consequences are direct: <strong>16 of the 17 gate-fired answerable questions never reached the retriever.</strong> Those three buckets contributed 0 verified, 0 wrong, 16 gate-fired abstentions — the pipeline never ran on them. Fixing Layer 1's over-firing would move 16 questions through the retriever. <strong>The number to move is 17, not 3.</strong></p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Category C · Answerable wrong (10/30)</div>
+      <h4>Two retrieval failure modes. Secondary to the gate's over-firing.</h4>
+      <p><strong>Mode 1 — prose-query limits on multi-hop and semantic Arabic:</strong> the top-1 verse was topically adjacent but not the gold. Contributing cause: the 36 fresh Arabic-path questions had no islamqa query embedding (the frozen eval's <code>query_embeddings.npz</code> covers 196 qids only), so they ran BM25-root only without the RRF branch. This is a limitation of running the frozen retriever on questions not in the frozen eval.</p>
+      <p><strong>Mode 2 — zero-match arbitrary top-1 on single-word Arabic lexical queries:</strong> the BM25 root index has no match for the query and returns an arbitrary order from a zero-score array. This is the same failure mode the Day 28 journal documented for "backbiting" → "backbit." It is a property of the frozen retriever, not a fresh-set-specific failure.</p>
+    </div>
+
+    <div class="bug-card">
+      <div class="bug-label">Category D · Answerable verified (3/30)</div>
+      <h4>100% precision on drafts the gate let through.</h4>
+      <p>The three verified questions were all cases where the gate was silent, the retriever returned the gold verse at top-1, and <code>safe_answer</code> verified the quote. <strong>3 of 3 attempts that reached the retriever with a gold top-1 verified — that's 100% precision on the drafts the verifier received.</strong> The failure is not that the verifier is unreliable. The failure is that the gate didn't let the retriever run on enough questions for the verifier to have more drafts to verify.</p>
+    </div>
+
+    <h2>Part 4 — What was published</h2>
+    <p>The benchmark was published on Hugging Face at <a href="https://huggingface.co/datasets/ahmad1979/ahmad-eval-v1" style="color:var(--amber-soft);">ahmad1979/ahmad-eval-v1</a> with 232 questions across the six buckets, under CC-BY-4.0. The dataset card documents:</p>
+    <ul>
+      <li><strong>Composition</strong> — by bucket, by source (196 manual calibration, 36 synthetic fresh).</li>
+      <li><strong>Intended uses and out-of-scope uses.</strong> Out-of-scope includes "answering religious questions authoritatively" and "training a model on this data" — the benchmark is an evaluation set, not a training set, and not a fatwa service.</li>
+      <li><strong>Four known limitations:</strong> the gold sets are narrow (a valid verse not in <code>expected_verses</code> is scored as wrong); the out-of-corpus bucket is out-of-corpus, not unanswerable-in-principle; the fresh questions' phrasing distribution differs from the calibration set; and cross-lingual translations are not perfect.</li>
+      <li><strong>The observed failure mode.</strong> The card reports the 196 numbers and the 36-fresh numbers side by side, and it names the pass-rule FAIL explicitly. It says the dominant failure is Layer 1 over-firing on prose phrasings, and it points to <code>pipeline_results.md</code> for the full analysis.</li>
+    </ul>
+    <p>Every number in <code>pipeline_results.md</code> is produced by a script in the code repo. Every question in the benchmark is in <code>ahmad_eval_v1.json</code>. The pipeline that produced the numbers is documented in the four session journals (7h, 7i, 7j, 7k), each of which is in the code repo. Anyone who wants to reproduce the result or refute it has everything they need.</p>
+
+    <blockquote><p>The benchmark is published with both the passing and the failing numbers. A benchmark that only documents the wins is a marketing artifact, not a benchmark.</p></blockquote>
+
+    <h2>Part 5 — What the project actually built</h2>
+    <p>Across five chapters of work, the Ahmad-AI project built five layers. Each one does a specific job, and each one has a specific verdict.</p>
+
+    <div class="tier-card">
+      <h4>Retrieval</h4>
+      <div class="tier-status partial">Working, with caveats</div>
+      <p>Weighted RRF over BM25-root and islamqa embeddings, then BGE-reranker-v2-m3, with a per-bucket routing table. <strong>Hit@5 = 50.6% on the 196 answerable questions.</strong> The retriever works on questions whose phrasing is like the ones it was tuned on. On the fresh set it degrades — partly because of prose-query limits, partly because the fresh Arabic-path questions had no islamqa embedding. Frozen at the numbers reported in Chapter 05.</p>
+    </div>
+
+    <div class="tier-card">
+      <h4>Verifier</h4>
+      <div class="tier-status done">Achieved</div>
+      <p>Canonical-text match against the Uthmani source in <code>canonical_quran.db</code>. 15/15 test coverage including the <code>2:282</code> longest-verse case. The verifier confirms every quoted verse against the canonical text, and refuses to accept any quote it cannot confirm. It does not judge relevance — that was never its contract. <strong>Every draft the pipeline produced that reached the verifier was correctly verified or correctly refused. The verifier is the part of the system that does exactly what it claims.</strong></p>
+    </div>
+
+    <div class="tier-card">
+      <h4>Scope-routing gate</h4>
+      <div class="tier-status partial">Partial</div>
+      <p>Two-layer gate — a 7B intent classifier and a keyword phrase backstop. Fires on <code>ruling</code>/<code>number</code>/<code>biography</code> classifications and on phrase matches. <strong>8/10 out-of-scope catches on the frozen 30; 4/6 on the fresh 6.</strong> The dominant failure is Layer 1's classification prompt over-firing on prose phrasings (57% vs 18% on calibration). The fix is prompt-level and testable. It is not a structural limit of the design. <strong>The gate does the right thing when it fires. It fires too often on prose phrasings.</strong></p>
+    </div>
+
+    <div class="tier-card">
+      <h4>End-to-end pipeline</h4>
+      <div class="tier-status partial">Calibration passes, fresh fails</div>
+      <p>Wires retrieval, a template drafter, the verifier, and the gate together. Deterministic. Runs in seconds from a checkpoint. <strong>32/180 verified on the 196 calibration. 3/30 verified on the fresh 36. Both numbers are true.</strong> The pipeline works on questions like the ones it was tuned on, and does not yet generalize to questions phrased differently. This is an honest first-deployment result for a rule-and-classifier pipeline, and it is more useful than a passing number would have been.</p>
+    </div>
+
+    <div class="tier-card">
+      <h4>Benchmark</h4>
+      <div class="tier-status done">Published</div>
+      <p>232 questions, six buckets, hand-reviewed gold, CC-BY-4.0, live on Hugging Face. The dataset card documents composition, intended uses, out-of-scope uses, four known limitations, and the reference pipeline's failure mode. <strong>Anyone using <code>ahmad_eval_v1</code> as a baseline sees both the benchmark and the pipeline that produced it, with its limitations recorded honestly.</strong></p>
+    </div>
+
+    <h2>Part 6 — The four-tier promise, checked</h2>
+    <p>Chapter 03 (Log 05) ended with a four-tier model of what a Quran retrieval system could promise. Five chapters later, here is the honest verdict on each tier.</p>
+
+    <div class="tier-card">
+      <h4>Tier 1 — Citation verification</h4>
+      <div class="tier-status done">Achieved</div>
+      <p>Near-100% via deterministic string matching against a canonical corpus. The verifier does exactly what it claims. It is proven by the 15/15 test suite, including the <code>2:282</code> fix that landed by failing-test-first.</p>
+    </div>
+
+    <div class="tier-card">
+      <h4>Tier 2 — Free-text retrieval</h4>
+      <div class="tier-status partial">Partial</div>
+      <p>Hit@5 = 50.6% on the 196. The retriever finds a gold verse in the top 5 for half of the answerable calibration questions. On the fresh set the behavior degrades — the fresh-question retrieval diagnostic shows the same directional pattern as the 196 (English-path buckets equal or better, Arabic-path mixed) but the numbers are within one hit per bucket at n=6. The retriever works on questions it was tuned on. Generalization to fresh phrasings is unproven.</p>
+    </div>
+
+    <div class="tier-card">
+      <h4>Tier 3 — Interpretive answers</h4>
+      <div class="tier-status none">Not attempted</div>
+      <p>The system routes rulings to qualified scholars. It does not interpret. That was the design from Chapter 03 onward: the Quran alone does not provide many rulings, and the system is built for a Quran-only corpus. The scope-routing gate exists because Tier 3 is out of scope, not because it was attempted and failed.</p>
+    </div>
+
+    <div class="tier-card">
+      <h4>Scope routing (added during the work)</h4>
+      <div class="tier-status partial">Partial</div>
+      <p>8/10 out-of-scope catches on the frozen 30, 4/6 on the fresh 6. The dominant failure is Layer 1 over-firing on prose phrasings (57% vs 18% on calibration). The failure is specific, localized, and diagnosable. The fix is prompt-level and testable. The gate does the right thing when it fires. It fires too often on prose phrasings.</p>
+    </div>
+
+    <h2>Part 7 — What remains, and what does not</h2>
+    <p>The next thing — <strong>prompt reformulation, backup per-verse design, or the Hadith extension — is a new chapter, not a continuation.</strong> The project as defined in <code>PROJECT.md</code> is closed. All five conditions of the definition of done have been met. The benchmark is published. The reference pipeline's results are published, including the failure. The journals are complete. The series is closed.</p>
+    <p>That does not mean the system is finished in any absolute sense. It means the specific work the project set out to do — build a hand-reviewed benchmark, build a reference pipeline, measure it honestly, publish the honest result — has been done. What comes next is a different project: improving the pipeline's generalization, or extending the benchmark to hadith, or building a user-facing system on top of the benchmark. Those are new chapters with new pass rules and new fresh-question sets.</p>
+    <p>The one thing this project could not do honestly is claim more than it measured. It measured what it measured, and it published what it measured. That is the standard the project set for itself in Chapter 03, and it is the standard the project met.</p>
+
+    <h2>Reflections</h2>
+    <p>The series has one lesson that holds across all five chapters: <strong>measure the component before blaming it, measure the metric before trusting it, and measure the system against fresh questions before publishing a claim about what it does.</strong></p>
+    <p>Chapter 05 discovered that the "working" system was returning the right answer under 20% of the time. Chapter 06 discovered that the reranker was helping most buckets and hurting one, and that the metric was measuring gold-set narrowness, not retriever quality. Chapter 07 discovered that the index was missing 68% of its own content. Chapter 08 discovered that the LLM-selector hypothesis failed at 7B on this hardware, and that the two-layer gate that replaced it worked at its own threshold. Chapter 09 discovered that the gate does not generalize to fresh prose phrasings, and that the honest thing to do is to publish the failure alongside the passing number.</p>
+    <p>Each chapter's finding is more useful than the chapter before it, because each chapter was built on the honest result of the previous one. The project does not have a single number it is proud of. It has a set of numbers it trusts, because each one was measured against a rule that was written before the run and not moved after it.</p>
+    <p>The reference pipeline does not generalize to fresh questions at the thresholds the project committed to. The project published the benchmark with that result recorded on its dataset card, and it closed the series with the failure as the finding. That is what an honest engineering log looks like when the honest engineering result is "the system works on the questions it was tuned on and does not yet work on the questions it was not."</p>
+    <p>The benchmark is public. The pipeline is documented. The failure is recorded. The series is closed. Whatever runs next — a prompt reformulation, a per-verse design, a hadith extension — starts from a fresh question set and a fresh pass rule, and inherits both the benchmark and the honesty of the chapters that built it.</p>
+
+    <div class="metrics-grid">
+      <div class="metric"><div class="num">232</div><div class="lbl">Questions Published on HF</div></div>
+      <div class="metric"><div class="num">3/30</div><div class="lbl">Verified on Fresh (CI95 3.5–25.6%)</div></div>
+      <div class="metric"><div class="num">2/6</div><div class="lbl">Out-of-Scope False-Answer</div></div>
+      <div class="metric"><div class="num">15/15</div><div class="lbl">Verifier Test Coverage</div></div>
+    </div>
+
+    <p><a href="https://huggingface.co/datasets/ahmad1979/ahmad-eval-v1" style="color:var(--amber-soft);">Ahmad-Eval v1 on Hugging Face &rarr;</a> &nbsp;·&nbsp; <a href="https://github.com/emadaed/quran-retrieval-benchmark" style="color:var(--amber-soft);">Code on GitHub &rarr;</a></p>
+
+    <p>The benchmark is published with both the passing and the failing numbers. A benchmark that only documents the wins is a marketing artifact, not a benchmark.</p>
+
+    <hr>
+    <p style="font-size:14px;">New to the Ahmad-AI build? Start with <a href="engineering-log.html" style="color:var(--amber-soft);">Chapter 01: Guardrails &amp; Hallucination Prevention &rarr;</a></p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk agentic AI.</h2>
+        <p>Open to global and remote roles building AI agents, guardrails, and evaluation systems — and happy to walk through any of the engineering above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad &mdash; Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

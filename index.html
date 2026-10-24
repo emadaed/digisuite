@@ -347,14 +347,14 @@
       </div>      
 
       <div class="card">
-        <span class="stamp dev">In Active Development</span>
+        <span class="stamp dev">Published — Benchmarked</span>
         <h3>Ahmad-AI</h3>
-        <p><em>Multilingual Quran &amp; Hadith research agent with a citation verifier and a two-layer scope-routing gate.</em> A retrieval-augmented Islamic knowledge system serving <strong>113,842 indexed records</strong> — 6,236 Quran verses across 114 surahs, 50,762 hadiths from the Sunnah.com corpus, and <strong>56,844 hadiths</strong> extracted from nine canonical Shamela collections (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah, Muwatta, Musnad Ahmad, Darimi). Two-stage retrieval: <code>paraphrase-multilingual-MiniLM-L12-v2</code> for recall across three ChromaDB collections, then <code>GATE-Reranker-V1</code> — an Arabic-native cross-encoder — for precision reranking, with exact-citation lookup for surah:ayah queries. <strong>Hand-reviewed 196-question Quran retrieval benchmark</strong> across six diagnostic buckets (lexical, semantic, multi-hop, cross-lingual, Roman-Urdu, out-of-corpus), with a <strong>canonical-text verifier</strong> (15/15 test coverage) that confirms every quoted verse against the Uthmani source. A <strong>two-layer scope-routing gate</strong> — a 7B intent classifier plus a rule-based phrase backstop — routes out-of-scope questions to a scope message instead of displaying a wrong verse, catching 8/10 out-of-corpus questions at 0/4 answerable false positives.</p>
+        <p><em>Multilingual Quran &amp; Hadith research agent, published as a benchmarked reference pipeline with honest failure modes documented.</em> A retrieval-augmented Islamic knowledge system serving <strong>113,842 indexed records</strong> — 6,236 Quran verses across 114 surahs, 50,762 hadiths from the Sunnah.com corpus, and <strong>56,844 hadiths</strong> extracted from nine canonical Shamela collections. Two-stage retrieval: <code>paraphrase-multilingual-MiniLM-L12-v2</code> for recall across three ChromaDB collections, then <code>GATE-Reranker-V1</code> — an Arabic-native cross-encoder — for precision reranking, with exact-citation lookup for surah:ayah queries. The accompanying <strong>Ahmad-Eval v1 benchmark</strong> (232 questions, six diagnostic buckets, hand-reviewed gold, CC-BY-4.0) is <strong>published on Hugging Face</strong>, with a canonical-text verifier (15/15 test coverage) and a two-layer scope-routing gate. The reference pipeline's measured results — including the <strong>documented failure to generalize to fresh questions</strong> at its pre-registered thresholds (3/30 verified, 2/6 false-answer) — are published alongside the benchmark rather than tuned away.</p>
         <div class="stackrow"><span>ChromaDB</span><span>Sentence-Transformers</span><span>GATE-Reranker</span><span>BGE-Reranker</span><span>Ollama</span><span>Python</span><span>Shamela</span><span>SQLite</span></div>
         <div class="card-links">
+          <a href="https://huggingface.co/datasets/ahmad1979/ahmad-eval-v1" target="_blank" rel="noopener noreferrer">HF Dataset &rarr;</a>
           <a href="engineering-log.html">Read Engineering Log &rarr;</a>
-          <a href="engineering-log-2.html">Week 5 — Shamela Integration &rarr;</a>
-          <a href="engineering-log-8.html">Latest — The Gate Ships &rarr;</a>
+          <a href="engineering-log-9.html">Closing Chapter — Generalization &rarr;</a>
         </div>
       </div>
             <div class="card">
