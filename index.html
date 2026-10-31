@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Muhammad Ahmad | AI Agent Engineer &amp; Supply Chain Architect</title>
 <meta name="description" content="AI Agent Engineer building LangGraph/RAG agents with deterministic guardrails, backed by 15+ years in supply chain operations. PMP&reg;, RMP&reg; certified.">
-<meta name="keywords" content="AI Agent Engineer, LangGraph, RAG, Tool Calling, Agentic AI, LLM Evaluation, Hallucination Mitigation, Digital Supply Chain Architect, Operations Manager, PMP, RMP, Automation Engineer, ERP Developer, Python Flask Developer, Warehouse Management, Vendor Management, SLA Governance, Ericsson, Managed Services">
+<meta name="keywords" content="AI Agent Engineer, LangGraph, RAG, Tool Calling, Agentic AI, LLM Evaluation, Hallucination Mitigation, Digital Supply Chain Architect, Operations Manager, PMP, RMP, Automation Engineer, ERP Developer, Python Flask Developer, Warehouse Management, Vendor Management, SLA Governance, Ericsson, Managed Services, Data Quality, Data Validation, Power BI, Azure SQL, SQL">
 <link rel="canonical" href="https://emadaed.github.io/digisuite/">
 
 <meta property="og:type" content="profile">
@@ -35,7 +35,7 @@
     "https://github.com/emadaed"
   ],
   "address": { "@type": "PostalAddress", "addressLocality": "Lahore", "addressCountry": "PK" },
-  "knowsAbout": ["AI Agents", "LangGraph", "RAG", "Tool Calling", "Agentic AI", "LLM Evaluation", "Digital Supply Chain Management", "Operations Management", "Process Automation", "Python", "Flask", "ERP Systems", "Warehouse Management", "PMP", "RMP"],
+  "knowsAbout": ["AI Agents", "LangGraph", "RAG", "Tool Calling", "Agentic AI", "LLM Evaluation", "Digital Supply Chain Management", "Operations Management", "Process Automation", "Python", "Flask", "SQL", "Azure SQL", "Power BI", "Data Quality", "ERP Systems", "Warehouse Management", "PMP", "RMP"],
   "alumniOf": "MSc Operations & Supply Chain Management"
 }
 </script>
@@ -230,6 +230,7 @@
       <a href="engineering-log.html">Engineering Log</a>
             <a href="engineering-log-3.html">Voice AI</a>
             <a href="engineering-log-4.html">Demand Forecasting Engine</a>
+            <a href="case-study-healthcare-dq.html">Data Quality Engine</a>
       <a href="#contact">Contact</a>
     </div>
   </div>
@@ -245,7 +246,7 @@
       <span class="tag"><b>AI Agent</b> Engineering</span>
       <span class="tag"><b>15+ YRS</b> Operations Leadership</span>
       <span class="tag"><b>PMP&reg; / RMP&reg;</b> PMI Certified</span>
-      <span class="tag"><b>4</b> Systems Shipped</span>
+      <span class="tag"><b>7</b> Systems Built</span>
       <span class="tag"><b>MSc</b> Supply Chain Mgmt</span>
     </div>
     <div class="cta-row">
@@ -268,6 +269,7 @@
       <span class="chip">Vendor &amp; SLA/WLA Governance</span>
       <span class="chip">Warehouse &amp; Inventory Process Improvement</span>
       <span class="chip">Business Systems &amp; Process Optimization</span>
+      <span class="chip">Data Quality, Reconciliation &amp; BI Reporting (Python, SQL, Power BI)</span>
     </div>
   </div>
 </section>
@@ -325,6 +327,18 @@
         </div>
       </div>
       <div class="card">
+        <span class="stamp open">Open Source · Synthetic Data</span>
+        <h3>Healthcare Revenue Cycle: Data Quality Engine</h3>
+        <img class="card-img" src="assets/healthcare-dq-scorecard.png" alt="Power BI data quality scorecard: 182 findings, 96.87% clean claim rate, dollars at risk by rule">
+        <p><em>12-rule validation engine for healthcare claims, tested against its own answer key.</em> The same rules run in Python, SQLite and Azure SQL and flag identical records and dollar totals, feeding a four-page Power BI report with a data quality scorecard and row-level security. The first validator scored <strong>14.8% precision</strong> on a deliberately messy test set; a cleaning layer and a near-duplicate rule brought it to 182 of 182 with no false alarms. <strong>Synthetic data, measured against my own generator</strong>; the limits are documented on the case study page.</p>
+        <div class="stackrow"><span>Python</span><span>pandas</span><span>SQL / T-SQL</span><span>Azure SQL</span><span>Power BI</span><span>DAX</span><span>pytest</span></div>
+        <div class="card-links">
+          <a href="case-study-healthcare-dq.html">Case Study &rarr;</a>
+          <a href="engineering-log-healthcare-dq.html">Engineering Log &rarr;</a>
+          <a href="https://github.com/emadaed/healthcare-data-ops" target="_blank" rel="noopener noreferrer">GitHub &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
         <span class="stamp open">Open Source & Live</span>
         <h3>Serverless Enterprise Warehouse Management System</h3>
         <img class="card-img" src="wms.png" alt="WMS Invoice and Fulfillment Dashboard Preview">
@@ -367,6 +381,7 @@
               </div>
             </div>
       </div>  
+    </div>
 </section>
 
 <section id="credentials" class="block reveal">

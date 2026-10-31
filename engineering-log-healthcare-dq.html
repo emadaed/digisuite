@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineering Log: Healthcare Data Quality Engine | Muhammad Ahmad</title>
+<meta name="description" content="Phase-by-phase engineering log of a 12-rule data quality engine: what failed, what the numbers said, and how it was fixed. Synthetic data.">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-healthcare-dq.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Engineering Log: Healthcare Data Quality Engine">
+<meta property="og:description" content="Phase-by-phase engineering log of a 12-rule data quality engine: what failed, what the numbers said, and how it was fixed. Synthetic data.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-healthcare-dq.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10161D;
+    --bg-deep:#0B0F14;
+    --panel:#171F29;
+    --panel-2:#1C2530;
+    --border:#2A3441;
+    --text:#ECEEF1;
+    --muted:#8B96A3;
+    --amber:#D9A441;
+    --amber-soft:#F0C878;
+    --stamp-live:#4C9A6A;
+    --stamp-open:#6B8CAE;
+    --stamp-dev:#C97D2E;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } *{ animation:none !important; transition:none !important; } }
+
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:var(--body); line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  section{ scroll-margin-top:90px; }
+
+  /* ---------- Manifest header bar ---------- */
+  .manifest-bar{
+    background:var(--bg-deep); border-bottom:1px solid var(--border);
+    font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted);
+  }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:28px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  @media (max-width:640px){ .navlinks{ display:none; } }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding:88px 0 64px; border-bottom:1px solid var(--border); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:18px; display:block; }
+  h1{ font-family:var(--display); font-size:clamp(38px,6vw,64px); line-height:1.05; margin:0 0 10px; letter-spacing:-.01em; }
+  .role{ font-family:var(--display); font-size:clamp(18px,2.4vw,24px); color:var(--amber-soft); font-weight:600; margin:0 0 22px; }
+  .lede{ max-width:620px; color:var(--muted); font-size:17px; margin-bottom:30px; }
+  .lede strong{ color:var(--text); }
+
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:34px; }
+  .tag{
+    font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border);
+    border-radius:3px; color:var(--muted); background:var(--panel);
+  }
+  .tag b{ color:var(--amber-soft); }
+
+  .cta-row{ display:flex; flex-wrap:wrap; gap:14px; }
+  .btn{
+    font-family:var(--body); font-weight:600; font-size:14.5px; padding:12px 22px; border-radius:4px;
+    text-decoration:none; display:inline-flex; align-items:center; gap:8px; border:1px solid transparent;
+  }
+  .btn-primary{ background:var(--amber); color:var(--bg-deep); }
+  .btn-primary:hover{ background:var(--amber-soft); }
+  .btn-ghost{ border-color:var(--border); color:var(--text); }
+  .btn-ghost:hover{ border-color:var(--amber); color:var(--amber-soft); }
+
+  /* ---------- Section heading ---------- */
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:34px; }
+  .sec-head .idx{ font-family:var(--mono); color:var(--amber); font-size:13px; }
+  .sec-head h2{ font-family:var(--display); font-size:26px; margin:0; letter-spacing:-.01em; }
+  .sec-head .rule{ flex:1; height:1px; background:var(--border); }
+
+  section.block{ padding:72px 0; border-bottom:1px solid var(--border); }
+
+  /* ---------- Expertise tags ---------- */
+  .chipgrid{ display:flex; flex-wrap:wrap; gap:12px; }
+  .chip{
+    background:var(--panel); border:1px solid var(--border); padding:10px 16px; border-radius:20px;
+    font-size:14px; color:var(--text);
+  }
+  .chip::before{ content:'\25C6'; color:var(--amber); font-size:9px; margin-right:8px; }
+
+  /* ---------- Tracking rail ---------- */
+  .rail{ position:relative; padding-left:32px; }
+  .rail::before{ content:''; position:absolute; left:6px; top:6px; bottom:6px; width:2px; background:linear-gradient(var(--amber), var(--border)); }
+  .stop{ position:relative; margin-bottom:44px; }
+  .stop:last-child{ margin-bottom:0; }
+  .stop::before{
+    content:''; position:absolute; left:-32px; top:4px; width:14px; height:14px; border-radius:50%;
+    background:var(--bg); border:2px solid var(--amber);
+  }
+  .stop .when{ font-family:var(--mono); font-size:12.5px; color:var(--amber-soft); margin-bottom:6px; display:block; }
+  .stop h3{ font-family:var(--display); font-size:19px; margin:0 0 4px; }
+  .stop .org{ color:var(--muted); font-size:14px; margin-bottom:10px; }
+  .stop p{ color:var(--muted); font-size:15px; max-width:640px; margin:0; }
+  .stop p strong{ color:var(--text); }
+
+  /* ---------- Project cards ---------- */
+  .projects{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media (max-width:760px){ .projects{ grid-template-columns:1fr; } }
+  .card{
+    background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:26px;
+    position:relative; display:flex; flex-direction:column; gap:14px;
+  }
+  .stamp{
+    position:absolute; top:18px; right:18px; font-family:var(--mono); font-size:10.5px; font-weight:600;
+    letter-spacing:.06em; padding:4px 9px; border-radius:3px; transform:rotate(3deg); text-transform:uppercase;
+    border:1px solid currentColor;
+  }
+  .stamp.live{ color:var(--stamp-live); }
+  .stamp.open{ color:var(--stamp-open); }
+  .stamp.dev{ color:var(--stamp-dev); }
+  .card h3{ font-family:var(--display); font-size:20px; margin:0; padding-right:90px; }
+  .card p{ color:var(--muted); font-size:14.5px; margin:0; }
+  .stackrow{ display:flex; flex-wrap:wrap; gap:6px; }
+  .stackrow span{ font-family:var(--mono); font-size:11px; background:var(--panel-2); border:1px solid var(--border); padding:3px 8px; border-radius:3px; color:var(--muted); }
+  .card-links{ display:flex; gap:16px; margin-top:auto; padding-top:6px; }
+  .card-links a{ font-size:13.5px; font-weight:600; color:var(--amber-soft); text-decoration:none; }
+  .card-links a:hover{ text-decoration:underline; }
+  /* ---------- Card Image Styling (Dark Mode Safe) ---------- */
+  .card-img {
+    width: 100%;
+    max-height: 140px;
+    object-fit: cover; /* Crops nicely to fit the box */
+    border-radius: 6px;
+    border: 1px solid var(--border); /* Uses your existing dark border */
+    background: var(--panel-2); /* Fallback background */
+    opacity: 0.95; /* Takes the edge off the brightness */
+    transition: opacity 0.2s ease;
+    margin-top: 4px; /* Gives a little breathing room */
+  }
+  .card-img:hover {
+    opacity: 1; /* Slight lift on hover to show it's interactive */
+  }
+
+  /* ---------- Credentials ---------- */
+  .credrow{ display:flex; flex-wrap:wrap; gap:14px; }
+  .cred{
+    font-family:var(--mono); font-size:13px; background:var(--panel); border:1px solid var(--border);
+    padding:12px 16px; border-radius:4px; color:var(--text); display:flex; align-items:center; gap:10px;
+  }
+  .cred b{ color:var(--amber-soft); }
+
+  /* ---------- Footer ---------- */
+  footer{ padding:60px 0 40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:28px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{
+    font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border);
+    padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;
+  }
+
+  .reveal{ opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease; }
+  .reveal.in{ opacity:1; transform:none; }
+
+  /* ---------- Article pages ---------- */
+  .article{ max-width:760px; margin:0 auto; padding:64px 24px 40px; }
+  .article .eyebrow{ margin-bottom:14px; }
+  .article h1{ font-size:clamp(30px,4.6vw,44px); line-height:1.12; margin:0 0 16px; }
+  .article .dek{ color:var(--muted); font-size:18px; margin:0 0 26px; }
+  .article .meta{ font-family:var(--mono); font-size:12px; color:var(--muted); display:flex; flex-wrap:wrap; gap:6px 22px; padding:14px 0; border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); margin-bottom:40px; }
+  .article .meta b{ color:var(--amber-soft); font-weight:600; }
+  .article h2{ font-family:var(--display); font-size:24px; margin:48px 0 14px; letter-spacing:-.01em; }
+  .article h2 .idx{ font-family:var(--mono); color:var(--amber); font-size:13px; margin-right:10px; }
+  .article h3{ font-family:var(--display); font-size:18px; margin:30px 0 8px; color:var(--amber-soft); }
+  .article p, .article li{ color:#C4CBD3; font-size:16px; }
+  .article p strong, .article li strong{ color:var(--text); }
+  .article ul, .article ol{ padding-left:22px; }
+  .article li{ margin-bottom:6px; }
+  .article code{ font-family:var(--mono); font-size:13.5px; background:var(--panel-2); border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber-soft); }
+  .article a{ color:var(--amber-soft); }
+  .callout{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:4px; padding:16px 20px; margin:26px 0; }
+  .callout p{ margin:0; font-size:15.5px; }
+  .callout.warn{ border-left-color:var(--stamp-dev); }
+  figure{ margin:30px 0; }
+  figure img{ width:100%; height:auto; border:1px solid var(--border); border-radius:6px; background:var(--panel-2); display:block; }
+  figcaption{ font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:8px; }
+  .tablewrap{ overflow-x:auto; margin:24px 0; }
+  table.results{ border-collapse:collapse; width:100%; font-size:14.5px; min-width:520px; }
+  table.results th, table.results td{ text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); color:#C4CBD3; }
+  table.results th{ font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--amber-soft); text-transform:uppercase; background:var(--panel); }
+  table.results td.num, table.results th.num{ text-align:right; font-family:var(--mono); }
+  table.results tr.hl td{ color:var(--text); font-weight:600; }
+  .linkrow{ display:flex; flex-wrap:wrap; gap:12px; margin:30px 0 0; }
+  .phase{ border-left:2px solid var(--border); padding-left:20px; margin:34px 0; position:relative; }
+  .phase::before{ content:''; position:absolute; left:-7px; top:6px; width:12px; height:12px; border-radius:50%; background:var(--bg); border:2px solid var(--amber); }
+  .phase h3{ margin-top:0; }
+  .phase .tag-line{ font-family:var(--mono); font-size:12px; color:var(--muted); margin-bottom:8px; display:block; }
+  .backlink{ font-family:var(--mono); font-size:13px; text-decoration:none; color:var(--muted); display:inline-block; margin-bottom:26px; }
+  .backlink:hover{ color:var(--amber-soft); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="case-study-healthcare-dq.html">Case Study</a>
+      <a href="engineering-log-healthcare-dq.html">Engineering Log</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+
+<main class="article">
+  <a class="backlink" href="index.html#systems">&larr; Back to Systems Built</a>
+  <span class="eyebrow">Engineering Log · Healthcare Data Quality Engine</span>
+  <h1>Engineering Log: Building a Validator That Could Prove It Was Wrong</h1>
+  <p class="dek">A phase-by-phase account of what I built, what failed, and what the numbers said. All data is synthetic.</p>
+  <div class="meta">
+    <span><b>PHASES</b> 6</span>
+    <span><b>BUILT WITH</b> an AI assistant (Claude) as pair programmer</span>
+    <span><b>RULE</b> every number below came from running the code</span>
+  </div>
+
+  <div class="callout"><p>I built this with an AI assistant. I did not trust its output by default: every count in this log comes from a run on my machine, and the case study explains what the results do and do not prove. The <a href="case-study-healthcare-dq.html">case study</a> is the short version.</p></div>
+
+  <div class="phase">
+    <span class="tag-line">PHASE 1 · DATA</span>
+    <h3>A generator that kept an answer key</h3>
+    <p>The first draft claimed to inject about 3% errors. Counting what it actually did gave about 0.5%, and it never created two of the error types it promised. It also recorded nothing about which rows it corrupted, so I could never measure a validator against it. I rewrote it to log every injected problem in <code>anomaly_manifest.csv</code>. Result: 150 injected anomalies across 5,000 claims (3.0%), eleven rule types, and a claims table with real procedure and diagnosis columns.</p>
+  </div>
+
+  <div class="phase">
+    <span class="tag-line">PHASE 2 · PYTHON ENGINE</span>
+    <h3>Rules as small functions, plus a catalog</h3>
+    <p>Each rule is a pure function, and a rule catalog (ID, severity, logic, business impact) feeds both the code and the Excel scorecard. Severity sets a failure-rate tolerance. First result: 100% precision and recall, 18 tests passing. I noted at the time that this was circular, because I had written the rules to match the errors I injected.</p>
+  </div>
+
+  <div class="phase">
+    <span class="tag-line">PHASE 3 · THE HARD SET</span>
+    <h3>14.8% precision</h3>
+    <p>I built a harder dataset: near-duplicate billing, claims with two problems at once, <strong>1,366 formatting problems</strong> (spacing, case, US-style dates, <code>$1,234.50</code>-style charges), and legitimate look-alikes that must not be flagged. The unchanged validator scored 14.8% precision and 88.5% recall.</p>
+    <div class="tablewrap"><table class="results">
+      <thead><tr><th>Where it went wrong</th><th class="num">Count</th></tr></thead>
+      <tbody>
+        <tr><td>Valid claims flagged “missing service date” (US date format)</td><td class="num">314</td></tr>
+        <tr><td>Valid claims flagged “malformed ICD-10” (lowercase or spaces)</td><td class="num">201</td></tr>
+        <tr><td>Valid claims flagged “invalid procedure code”</td><td class="num">151</td></tr>
+        <tr><td>Good payments flagged “orphan” (stray space or case in claim ID)</td><td class="num">144</td></tr>
+        <tr><td>Claims flagged “Paid without payment” (their payment’s claim ID had stray spaces or case)</td><td class="num">115</td></tr>
+        <tr class="hl"><td>Total false alarms</td><td class="num">925</td></tr>
+        <tr><td>Real errors missed (overpayments behind currency text, date-order errors, one duplicate payment, 12 near-duplicates with no rule)</td><td class="num">21</td></tr>
+      </tbody>
+    </table></div>
+    <p><strong>The fix</strong> was a cleaning layer (trim, case, two date formats, currency text) that logs what it corrected and never counts it as a failure, plus a twelfth rule for near-duplicate billing. Result: 182 of 182 found, zero false alarms, 27 tests. Each look-alike has its own unit test.</p>
+  </div>
+
+  <div class="phase">
+    <span class="tag-line">PHASE 4 · SQL</span>
+    <h3>The same rules in SQL, and a parity check</h3>
+    <p>I rebuilt the pipeline in SQLite as layers: raw tables (all text), staging views that clean, twelve rule views, and a star schema. SQLite has no regular expressions, so the ICD-10 format check became a set of <code>GLOB</code> patterns. A parity script compares the SQL rule output with the Python output, rule by rule, on records and on dollars. All twelve match. Seven more tests brought the suite to 34.</p>
+  </div>
+
+  <div class="phase">
+    <span class="tag-line">PHASE 5 · AZURE SQL</span>
+    <h3>Porting to T-SQL</h3>
+    <p>I created a free-tier Azure SQL database and set the free-limit behaviour to auto-pause so it cannot incur charges. Porting meant changing the dialect: <code>GLOB</code> became <code>LIKE</code>, <code>date()</code> became <code>TRY_CONVERT</code>, <code>CREATE TABLE AS</code> became <code>SELECT … INTO</code>, every subquery needed an alias, and view definitions had to be split into <code>GO</code> batches. Azure’s default text comparison ignores letter case, so ordering that decides which duplicate is “the original” uses an explicit binary collation. The build loads about 9,000 rows and finishes in about a minute. All twelve rules matched Python on the first full run, with identical dollar totals.</p>
+  </div>
+
+  <div class="phase">
+    <span class="tag-line">PHASE 6 · POWER BI</span>
+    <h3>Model, measures, and a cross-check</h3>
+    <p>The model uses the star schema with a role-playing date dimension (service date active, submission date inactive) and DAX measures for denial rate, collection rate, days to pay, pending AR, clean claim rate and dollars at risk. Import mode keeps the free-tier database from waking on every click. Row-level security is one static role per payer. I then checked the report against the SQL results. Denial rate (609 denied of 3,961 decided claims = 15.37%) and the 182 findings matched. I worked out the clean claim rate independently (158 flagged of 5,052 = 96.87%) and it matched too.</p>
+    <p>The cross-check also caught real mistakes: an “AR aging” chart that plotted all claims instead of pending ones, and report notes that described the duplicate-payment and procedure-code rules more strongly than the code implements them.</p>
+  </div>
+
+  <h2><span class="idx">§</span>What I would do differently</h2>
+  <ul>
+    <li>Build the hard dataset first. The easy set taught me nothing the hard set did not teach faster.</li>
+    <li>Give the manifest a precise rule for every record type from the start, including the legitimate look-alikes.</li>
+    <li>Add dynamic row-level security with a mapping table, and a payer column on the findings so security can filter them.</li>
+  </ul>
+
+  <div class="linkrow">
+    <a class="btn btn-primary" href="https://github.com/emadaed/healthcare-data-ops" target="_blank" rel="noopener noreferrer">View on GitHub &rarr;</a>
+    <a class="btn btn-ghost" href="case-study-healthcare-dq.html">Read the Case Study</a>
+  </div>
+</main>
+
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let’s talk operations.</h2>
+        <p>Open to global and remote roles in supply chain leadership, operations management, data operations and process automation.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF MANIFEST</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
