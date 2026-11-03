@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Lead I Lost: Building an Intake Pipeline and Finding Where It Breaks &mdash; Engineering Log 10 | Muhammad Ahmad</title>
+<meta name="description" content="An engineering log on building a synthetic-data intake and attribution pipeline: failing tests, a spend fan-out trap, a lead lost when the API was down, a reporting copy because Metabase would not read SQLite, and an assistant that quotes instead of writing.">
+<meta name="keywords" content="Marketing Attribution, Data Pipeline, n8n, Flask, PostgreSQL, Metabase, SQL, Healthcare Operations, pytest">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/engineering-log-10.html">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Lead I Lost: Building an Intake Pipeline and Finding Where It Breaks &mdash; Engineering Log 10">
+<meta property="og:description" content="Six things that broke while building an intake pipeline, and what each one taught me.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-10.html">
+<meta property="og:image" content="https://emadaed.github.io/digisuite/assets/intake-booking-dashboard.png">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "The Lead I Lost: Building an Intake Pipeline and Finding Where It Breaks &mdash; Engineering Log 10",
+  "author": { "@type": "Person", "name": "Muhammad Ahmad", "url": "https://emadaed.github.io/digisuite/" },
+  "url": "https://emadaed.github.io/digisuite/engineering-log-10.html",
+  "about": ["Marketing Analytics", "Data Pipeline", "Workflow Automation", "SQL", "Healthcare Operations"]
+}
+</script>
+
+<style>
+  :root{
+    --bg:#10161D; --bg-deep:#0B0F14; --panel:#171F29; --panel-2:#1C2530; --border:#2A3441;
+    --text:#ECEEF1; --muted:#8B96A3; --amber:#D9A441; --amber-soft:#F0C878;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --display:'Space Grotesk','Segoe UI',sans-serif;
+    --body:'Inter','Segoe UI',sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+  .prose{ max-width:720px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:24px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:900px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:760px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:640px; margin:0 0 26px; }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .chapter-nav{ display:flex; gap:14px; margin:26px 0 0; font-family:var(--mono); font-size:13px; flex-wrap:wrap; }
+  .chapter-nav a{ text-decoration:none; color:var(--muted); padding:8px 14px; border:1px solid var(--border); border-radius:4px; }
+  .chapter-nav a:hover{ color:var(--amber-soft); border-color:var(--amber); }
+  .chapter-nav a.active{ color:var(--amber-soft); border-color:var(--amber); background:var(--panel); }
+
+  /* ---- additions for this page (replace this whole block with the <style> block from engineering-log-4.html for an exact match) ---- */
+  .article-body{ padding:48px 0 72px; }
+  .article-body h2{ font-family:var(--display); font-size:26px; line-height:1.25; margin:46px 0 14px; letter-spacing:-.005em; }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body p{ margin:0 0 16px; color:#D5D9DF; }
+  .article-body strong{ color:var(--text); font-weight:600; }
+  .article-body ul, .article-body ol{ margin:0 0 18px; padding-left:22px; color:#D5D9DF; }
+  .article-body li{ margin-bottom:8px; }
+  .article-body code{ font-family:var(--mono); font-size:.9em; background:var(--panel); border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber-soft); }
+  .article-body table{ width:100%; border-collapse:collapse; margin:20px 0 26px; font-size:14.5px; }
+  .article-body th{ text-align:left; font-family:var(--mono); font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--amber-soft); background:var(--panel); padding:10px 12px; border-bottom:1px solid var(--border); }
+  .article-body td{ padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:top; color:#D5D9DF; }
+  .article-body img{ max-width:100%; height:auto; display:block; border:1px solid var(--border); border-radius:6px; margin:22px 0 8px; }
+  .article-body .caption{ font-size:13px; color:var(--muted); font-style:italic; margin-bottom:26px; }
+  @media (max-width:640px){ .article-body table{ display:block; overflow-x:auto; } }
+
+  footer{ border-top:1px solid var(--border); background:var(--bg-deep); padding:56px 0 28px; }
+  .foot-top{ display:grid; grid-template-columns:1.2fr 1fr; gap:40px; }
+  @media (max-width:800px){ .foot-top{ grid-template-columns:1fr; } }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 12px; }
+  .foot-cta p{ color:var(--muted); margin:0; max-width:480px; }
+  .foot-links{ display:flex; flex-direction:column; gap:12px; font-family:var(--mono); font-size:13.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ display:inline-block; min-width:92px; color:var(--amber); font-size:11.5px; letter-spacing:.08em; }
+  .end-manifest{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:44px; padding-top:20px; border-top:1px solid var(--border); font-family:var(--mono); font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Intake-to-Booking &middot; Log 10</b></span>
+    <span>SUBJECT: <b>Spend to Occurred Appointments</b></span>
+    <span>STATUS: <b>Built &middot; Synthetic data &middot; 71 tests</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="engineering-log.html">Ahmad-AI &middot; Log</a>
+      <a href="engineering-log-2.html">Log 02</a>
+      <a href="engineering-log-3.html">Voice AI &middot; Log 03</a>
+      <a href="engineering-log-4.html">Forecasting &middot; Log 04</a>
+      <a href="engineering-log-10.html" class="current">Intake-to-Booking &middot; Log 10</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Intake-to-Booking &middot; Log 10</span>
+    <span class="eyebrow">Engineering Log 10 &mdash; Marketing &amp; Operations Analytics</span>
+    <h1>The Lead I Lost: Building an Intake Pipeline and Finding Where It Breaks</h1>
+    <p class="lede">Failing tests, a join that could silently inflate cost, a lead lost when the API was down, and a retry setting that did not rescue it. What broke, what I changed, and what I wrote down instead of pretending it was fixed.</p>
+    <div class="tagrow">
+      <span class="tag"><b>Python</b> &middot; Flask</span>
+      <span class="tag"><b>SQL</b> &middot; SQLite &middot; PostgreSQL</span>
+      <span class="tag"><b>n8n</b> workflow</span>
+      <span class="tag"><b>Metabase</b> dashboard</span>
+      <span class="tag"><b>pytest</b> 71 tests</span>
+    </div>
+    <div class="chapter-nav">
+      <a href="case-study-intake-booking.html">Case Study: Intake-to-Booking</a>
+      <a href="engineering-log-10.html" class="active">Engineering Log 10</a>
+      <a href="https://github.com/emadaed/intake-to-booking" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The goal</h2>
+    <p>Marketing reports usually stop at leads and bookings. I wanted a pipeline where I could follow a dollar of ad spend all the way to an appointment that actually happened, and where every number on the dashboard could be traced back and checked. Not a clever model; a pipeline I could trust.</p>
+    <p>The data is synthetic, and I say so on every page, because the interesting part was never the numbers. It was building the plumbing and finding where it breaks. I worked with an AI assistant (Claude) to design and draft code and documents. I ran every command, read every output, and made the scope decisions. The mistakes below are mine.</p>
+
+    <h2>Step 1: a funnel I could repeat</h2>
+    <p>I generated six months of spend, leads, bookings and appointments for five channels with a fixed random seed, so my numbers matched the ones I was expecting on the first run. The key modeling choice: a <strong>booking is not an appointment</strong>. Some bookings are cancelled or become no-shows, and appointments scheduled after the last day are still &ldquo;scheduled&rdquo;, not yet &ldquo;occurred&rdquo;. Everything later depends on that difference.</p>
+
+    <h2>Incident 1: three failing tests</h2>
+    <p>I saved the SQL views and the tests, pushed, ran pytest and got 13 passes and 3 failures, all with the same message: the view did not exist. Nothing was wrong with the code. I had never run the script that creates the views, and nothing in my notes said it was a step. <strong>Lesson:</strong> an unwritten dependency between steps is a bug. From then on every step had its command written out.</p>
+
+    <h2>Step 2: the spend fan-out trap</h2>
+    <p>Joining spend straight onto leads repeats each spend row once for every lead, so cost inflates silently. I aggregate spend and funnel counts separately and join the totals. Then I added a test that compares the view's total spend to the source table, because the failure produces plausible-looking numbers and no error.</p>
+
+    <h2>Step 3: the intake API and the workflow</h2>
+    <p>n8n receives the lead, cleans it, and calls a small Flask API that validates and writes. I split it that way because n8n has no SQLite node, and because validation I care about should live in code with tests. The API accepts only four fields. Anything else, such as an email address, is rejected with the field names (never the values) rather than dropped silently.</p>
+    <p>Three small surprises taught me the tool. n8n's test URL listens for exactly one call, so my second test returned &ldquo;not registered&rdquo;. A test lead with the wrong fields showed me how the clean-up node reports what it dropped. And my rejected-lead record included an extra field that the API correctly refused, which was the allowlist working on my own mistake.</p>
+    <img src="assets/intake-booking-n8n-workflow.png" alt="n8n workflow: webhook, field-cleaning code node, HTTP request to the lead API, an IF node that splits success from rejection, a follow-up routing step, and a rejected-lead record sent to a log endpoint" loading="lazy">
+    <p class="caption">The n8n intake workflow: receive, clean, call the API, then route success or rejection.</p>
+
+    <h2>Incident 2: the lead I lost</h2>
+    <p>The API was not running when I sent a test lead. n8n showed a connection-refused error and the lead was gone: it existed only in n8n's execution history. I had switched on &ldquo;Never Error&rdquo; so that a 422 could flow to a rejected branch, and that setting only helps when the API answers.</p>
+    <p>Thinking it through, I found three weaknesses, not one:</p>
+    <ol>
+      <li><strong>No answer is not an error response.</strong> When the API is down there is nothing to route.</li>
+      <li><strong>A validation failure and an outage look identical.</strong> My IF node treats anything but 201 as one path, so a 500 (retry would help) is logged like a 422 (retry would not).</li>
+      <li><strong>The rejected-lead log depends on the same API.</strong> If the API is down, recording the failure fails too.</li>
+    </ol>
+    <p>I then tested n8n's Retry On Fail with the API stopped. No retries were observed and the lead was still lost. I recorded what I saw and wrote the engineering spec instead of pretending I had a fix. The design in that spec needs a durable inbox, classified retries and an alert, and retries are only safe once duplicate leads are prevented, which is a second spec.</p>
+
+    <h2>Step 4: a reporting copy, because Metabase would not read SQLite</h2>
+    <p>I wanted Metabase to read my SQLite file directly. My research did not turn up official support for SQLite, so I did not build on it. Instead the API keeps writing to SQLite and a script copies the data to PostgreSQL in Docker, checking that row counts and total spend match before it commits. That is also how many real teams separate operational and reporting databases.</p>
+    <p>Two small blockers slowed me down. Metabase refused the database login even with the right password; my best guess is browser autofill replacing the typed login, and I fixed it by setting a known password and using a private window. And the chart builder showed an empty Y-axis until I rebuilt the same chart from a SQL question.</p>
+    <img src="assets/intake-booking-dashboard.png" alt="Metabase dashboard with four charts: cost per booking versus per occurred appointment by paid channel, show rate by channel, occurred appointments per month by channel, and rejected leads by reason" loading="lazy">
+    <p class="caption">The four-chart dashboard, built on the Postgres reporting copy. All data is synthetic.</p>
+
+    <h2>Step 5: an assistant that quotes instead of writing</h2>
+    <p>For the staff knowledge assistant I chose not to generate text. It finds the closest passage in a set of fictional approved policies and returns it word for word, with the document ID and effective date. The rules run in a fixed order in plain code: emergency wording first, then patient identifiers, then clinical questions, then a search that abstains when the evidence is weak. A superseded policy is never searched, and a policy dated in the future is not used yet.</p>
+    <p>Two findings from my own testing. First, my question &ldquo;How much notice is needed to cancel?&rdquo; got no answer, because the policy said &ldquo;24 hours before&rdquo; and never used the word &ldquo;notice&rdquo;. I rewrote the policy in the words staff would use. Second, while testing I found a tension I have <strong>not fixed yet</strong>: the privacy rule refuses a numeric case ID, but the privacy policy tells staff to use case IDs. The checker cannot tell a case number from a member ID. The fix is a defined case-ID format, and it is on my list.</p>
+    <p>The 50 tests for this assistant were written by me, so they show the guardrails fire as designed. They say nothing about accuracy on real questions, and the case study says so.</p>
+
+    <h2>What the dashboard says, and what it does not</h2>
+    <p>Meta looks cheapest per booking, but only about half of its booked visits happen, so the gap narrows per occurred appointment. I chose those rates when building the data. October looks low because appointments after 31 October are still &ldquo;scheduled&rdquo; rather than &ldquo;occurred&rdquo;, which is not a real decline. I wrote that into the documentation because a reader will ask.</p>
+
+    <h2>What I would tell myself at the start</h2>
+    <ul>
+      <li>Write the command for every step, including the ones that feel obvious.</li>
+      <li>Test what happens when a dependency is down on the first day, not the last.</li>
+      <li>Record what you observed, not what you expected. My expectation about retries was wrong, and writing the real result down was worth more than the guess.</li>
+      <li>Say what is simulated, what is designed but not built, and what is built.</li>
+    </ul>
+    <p>The case study is in <a href="case-study-intake-booking.html"><strong>Case Study: Intake-to-Booking</strong></a>, and the code, tests, backlog and four engineering specs are in the <a href="https://github.com/emadaed/intake-to-booking" target="_blank" rel="noopener noreferrer"><strong>GitHub repository</strong></a>.</p>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk supply chain analytics.</h2>
+        <p>Open to global and remote roles building forecasting, planning, and decision-support systems &mdash; and happy to walk through any of the systems above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad &mdash; Lahore, Pakistan</span>
+      <span>END OF LOG 10</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

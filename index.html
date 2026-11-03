@@ -231,6 +231,8 @@
             <a href="engineering-log-3.html">Voice AI</a>
             <a href="engineering-log-4.html">Demand Forecasting Engine</a>
             <a href="case-study-healthcare-dq.html">Data Quality Engine</a>
+            <a href="case-study-intake-booking.html">Intake-to-Booking Attribution Pipeline</a>
+
       <a href="#contact">Contact</a>
     </div>
   </div>
@@ -306,16 +308,17 @@
     <div class="projects">
 
       <div class="card">
-        <span class="stamp dev">Demo on Website/YouTube</span>
-        <h3>GrowEasy <span style="font-size:0.75em; opacity:0.8;">(Flagship)</span></h3>
-        <img class="card-img" src="dashboard.png" alt="GrowEasy Dashboard Preview">
-        <p><em>AI-Powered ERP for SMEs.</em> Modern full-stack SaaS platform for retailers, wholesalers, and freelancers. Integrated inventory, invoicing, and financial reporting designed to replace fragmented tools. Production-grade stack — now also the live SCM data layer behind Ahmad-AI's agent-queryable inventory insights.</p>
-        <div class="stackrow"><span>Python</span><span>Flask</span><span>PostgreSQL</span><span>Redis</span><span>Celery</span><span>Docker</span><span>Sentry</span></div>
+        <span class="stamp dev">Built &middot; Synthetic data</span>
+        <h3>Intake-to-Booking Attribution Pipeline</h3>
+        <img class="card-img" src="assets/intake-booking-dashboard.png" alt="Intake-to-Booking dashboard with four charts: cost per booking versus per occurred appointment, show rate by channel, monthly occurred appointments, and rejected leads" loading="lazy">
+        <p><em>From ad spend to the appointments that actually happen.</em> A synthetic-data pipeline built end to end: an n8n intake workflow feeds a strict Flask API (a field allowlist, so no contact or health data is accepted), a SQLite operational database, a Postgres reporting copy and a four-chart Metabase dashboard. The simulated result: Meta looks cheapest per booking (about $41 versus $82 for Google), but only 49% of its booked visits happen, so the gap narrows to about $87 versus $106 per occurred appointment. Documented failures include a lead lost when the API is down, and n8n's Retry On Fail did not rescue it, which became an engineering spec. Also ships a backlog, four engineering specs and a rule-based staff knowledge assistant. <strong>71 automated tests.</strong></p>
+        <div class="stackrow"><span>Python</span><span>Flask</span><span>SQL</span><span>n8n</span><span>Docker</span><span>PostgreSQL</span><span>Metabase</span><span>pytest</span></div>
         <div class="card-links">
-          <a href="https://groweasycloud.github.io/groweasy-site" target="_blank" rel="noopener noreferrer">Visit Website &rarr;</a>
+          <a href="engineering-log-10.html">Read Engineering Log &rarr;</a>
+          <a href="case-study-intake-booking.html">Case Study &rarr;</a>
         </div>
       </div>
-             <div class="card">
+      <div class="card">
         <span class="stamp dev">Shipped · Pilot validated · v2</span>
         <h3>Demand Forecasting Engine</h3>
         <img class="card-img" src="assets/forecasting-data-quality.png" alt="Demand Forecasting Engine — data quality report showing 84,741 clean order lines, 872 customers, 4,307 SKUs">
@@ -336,6 +339,16 @@
           <a href="case-study-healthcare-dq.html">Case Study &rarr;</a>
           <a href="engineering-log-healthcare-dq.html">Engineering Log &rarr;</a>
           <a href="https://github.com/emadaed/healthcare-data-ops" target="_blank" rel="noopener noreferrer">GitHub &rarr;</a>
+        </div>
+      </div>
+      <div class="card">
+        <span class="stamp dev">Demo on Website/YouTube</span>
+        <h3>GrowEasy <span style="font-size:0.75em; opacity:0.8;">(Flagship)</span></h3>
+        <img class="card-img" src="dashboard.png" alt="GrowEasy Dashboard Preview">
+        <p><em>AI-Powered ERP for SMEs.</em> Modern full-stack SaaS platform for retailers, wholesalers, and freelancers. Integrated inventory, invoicing, and financial reporting designed to replace fragmented tools. Production-grade stack — now also the live SCM data layer behind Ahmad-AI's agent-queryable inventory insights.</p>
+        <div class="stackrow"><span>Python</span><span>Flask</span><span>PostgreSQL</span><span>Redis</span><span>Celery</span><span>Docker</span><span>Sentry</span></div>
+        <div class="card-links">
+          <a href="https://groweasycloud.github.io/groweasy-site" target="_blank" rel="noopener noreferrer">Visit Website &rarr;</a>
         </div>
       </div>
       <div class="card">
