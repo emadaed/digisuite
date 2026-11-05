@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generative Video Samples & Verification | Muhammad Ahmad</title>
+<meta name="description" content="Five AI-generated video clips illustrating systems verification. Made with Seedance 2.0 Mini and Veo 3.1 Lite, with documented verification notes.">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/video-samples.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Generative Video Samples & Verification">
+<meta property="og:description" content="Five AI-generated clips representing times the machine was wrong and I caught it. Includes prompts and verification notes.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/video-samples.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10161D;
+    --bg-deep:#0B0F14;
+    --panel:#171F29;
+    --panel-2:#1C2530;
+    --border:#2A3441;
+    --text:#ECEEF1;
+    --muted:#8B96A3;
+    --amber:#D9A441;
+    --amber-soft:#F0C878;
+    --stamp-live:#4C9A6A;
+    --stamp-open:#6B8CAE;
+    --stamp-dev:#C97D2E;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:22px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:900px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:820px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:680px; margin:0 0 26px; }
+  .art-header .lede strong{ color:var(--text); }
+  
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .article-body{ padding:56px 0 30px; }
+  .prose{ max-width:800px; margin:0 auto; padding:0 24px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+
+  /* Video Grid */
+  .video-grid{ display:grid; grid-template-columns:1fr; gap:40px; margin-top:30px; }
+  
+  .video-card{ background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:24px; }
+  
+  .video-header{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:10px; }
+  .video-title{ font-family:var(--display); font-size:20px; margin:0; color:var(--text); letter-spacing:-.01em; }
+  .video-tool{ font-family:var(--mono); font-size:11.5px; color:var(--amber-soft); background:var(--panel-2); padding:4px 10px; border-radius:3px; border:1px solid var(--border); }
+
+  /* Video Player Container */
+  .video-container {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto 20px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  /* Prompt Block */
+  .prompt-block{ margin-bottom:20px; }
+  .prompt-label{ font-family:var(--mono); font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; display:block; }
+  .prompt-text{ font-family:var(--mono); font-size:13px; color:#C4CBD3; background:var(--panel-2); border:1px solid var(--border); padding:14px 16px; border-radius:4px; line-height:1.5; }
+
+  /* Verification Note */
+  .verification-box{ background:rgba(217, 164, 65, 0.05); border:1px solid var(--amber); border-left:4px solid var(--amber); border-radius:0 4px 4px 0; padding:16px 20px; }
+  .verification-label{ font-family:var(--mono); font-size:11px; color:var(--amber); text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; display:block; }
+  .verification-text{ font-size:15px; color:var(--text); margin:0; }
+  .verification-text strong{ color:var(--amber-soft); }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Generative Video Samples</b></span>
+    <span>SUBJECT: <b>Visual Metaphors for Verification</b></span>
+    <span>STATUS: <b>5 clips generated · Verified</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="verification-log.html">Verification Log</a>
+      <a href="video-samples.html" class="current">Video Samples</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="verification-log.html">&larr; Back to Verification Log</a>
+    <span class="chapter-badge">Video Samples</span>
+    <span class="eyebrow">Generative Video · AI Operations</span>
+    <h1>Visual Metaphors for Verification</h1>
+    <p class="lede">I use generative video tools to produce visual metaphors for my <a href="verification-log.html" style="color:var(--amber-soft);">Verification Log</a>. Below are the exact prompts I fed the models, and the <strong>verification note</strong> I wrote after watching the output. This demonstrates the core job requirement: running AI pipelines and catching when the machine hallucinated.</p>
+    <div class="tagrow">
+      <span class="tag"><b>Seedance 2.0 Mini</b> (Free Tier)</span>
+      <span class="tag"><b>Veo 3.1 Lite</b> (Free Tier)</span>
+      <span class="tag"><b>5</b> clips</span>
+      <span class="tag"><b>1</b> documented AI hallucination</span>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <div class="video-grid">
+
+      <!-- CLIP 01 -->
+      <div class="video-card">
+        <div class="video-header">
+          <h2 class="video-title">01: The Summary That Passed the Checker</h2>
+          <span class="video-tool">Seedance 2.0 Mini · 16:9 · 480p</span>
+        </div>
+        
+        <div class="video-container">
+          <video controls preload="metadata">
+            <source src="assets/video/clip-01.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="prompt-block">
+          <span class="prompt-label">Prompt Used</span>
+          <div class="prompt-text">
+            A close-up static shot of a printed document on a dark wooden desk, warm desk-lamp light from the left. A hand enters frame holding a red pen, circles a single sentence near the bottom of the page, then withdraws. The circled sentence is visible but unreadable. Shallow depth of field, everything except the circled line softly blurred. Documentary aesthetic, natural desk clutter at the edges. Audio: quiet room tone, one soft pen scratch, the faint rustle of paper. No text overlays, no captions, no watermark.
+          </div>
+        </div>
+
+        <div class="verification-box">
+          <span class="verification-label">Verification Note</span>
+          <p class="verification-text"><strong>Pass.</strong> Clean. The red pen circle is visible. No invented text.</p>
+        </div>
+      </div>
+
+      <!-- CLIP 02 -->
+      <div class="video-card">
+        <div class="video-header">
+          <h2 class="video-title">02: The Forecast Metric</h2>
+          <span class="video-tool">Veo 3.1 Lite · 16:9 · 720p</span>
+        </div>
+        
+        <div class="video-container">
+          <video controls preload="metadata">
+            <source src="assets/video/clip-02.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="prompt-block">
+          <span class="prompt-label">Prompt Used</span>
+          <div class="prompt-text">
+            A close-up of an analog gauge on a scratched metal panel. The needle is in the red zone. A hand enters frame, gently flicks the needle, and it swings left to settle in the neutral zone. Warm tungsten light. Documentary style, shallow depth of field. Audio: one metallic tick. No text, no labels. 16:9.
+          </div>
+        </div>
+
+        <div class="verification-box">
+          <span class="verification-label">Verification Note</span>
+          <p class="verification-text"><strong>Pass.</strong> Clean. The needle flicks left. Good audio tick.</p>
+        </div>
+      </div>
+
+      <!-- CLIP 03 -->
+      <div class="video-card">
+        <div class="video-header">
+          <h2 class="video-title">03: The Validator Precision</h2>
+          <span class="video-tool">Veo 3.1 Lite · 16:9 · 720p</span>
+        </div>
+        
+        <div class="video-container">
+          <video controls preload="metadata">
+            <source src="assets/video/clip-03.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="prompt-block">
+          <span class="prompt-label">Prompt Used</span>
+          <div class="prompt-text">
+            A close-up of a magnifying glass hovering over a printed spreadsheet on a dark surface. Through the lens, numbers are blurred; outside the lens, they are sharp. The glass moves slowly down one column. Warm task light, deep shadows. Audio: soft scrape of glass on paper. No readable numbers, no text overlays. 16:9.
+          </div>
+        </div>
+
+        <div class="verification-box">
+          <span class="verification-label">Verification Note</span>
+          <p class="verification-text"><strong>Pass.</strong> Clean. Magnifying glass moves perfectly.</p>
+        </div>
+      </div>
+
+      <!-- CLIP 04 -->
+      <div class="video-card">
+        <div class="video-header">
+          <h2 class="video-title">04: The Retry Setting (Hallucination Caught)</h2>
+          <span class="video-tool">Veo 3.1 Lite · 16:9 · 720p</span>
+        </div>
+        
+        <div class="video-container">
+          <video controls preload="metadata">
+            <source src="assets/video/clip-04.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="prompt-block">
+          <span class="prompt-label">Prompt Used</span>
+          <div class="prompt-text">
+            A close-up of a mechanical switch on a dusty control panel, flipped to the ON position. A small indicator light next to it remains dark. A hand enters, flips the switch OFF and ON again; the light stays dark. Low-key lighting, one overhead bulb. Audio: a dry mechanical click, then silence. No text, no labels. 16:9.
+          </div>
+        </div>
+
+        <div class="verification-box">
+          <span class="verification-label">Verification Note</span>
+          <p class="verification-text"><strong>Pass (Hallucination Caught).</strong> The switch flips, but the AI invented a glowing red light instead of keeping it dark. The exact metaphor of the "Retry On Fail" setting failing to rescue the lead, made literal by the model's own hallucination.</p>
+        </div>
+      </div>
+
+      <!-- CLIP 05 -->
+      <div class="video-card">
+        <div class="video-header">
+          <h2 class="video-title">05: The Prose Payload</h2>
+          <span class="video-tool">Veo 3.1 Lite · 16:9 · 720p</span>
+        </div>
+        
+        <div class="video-container">
+          <video controls preload="metadata">
+            <source src="assets/video/clip-05.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        </div>
+
+        <div class="prompt-block">
+          <span class="prompt-label">Prompt Used</span>
+          <div class="prompt-text">
+            An extreme close-up of a small rectangular slot on a metal machine. A folded piece of paper is pushed toward the slot, but it is too wide. The paper buckles against the metal edge. A hand withdraws the paper. Cool fluorescent light, slight vignette. Audio: soft crinkle of paper against metal. No readable text, no watermark. 16:9.
+          </div>
+        </div>
+
+        <div class="verification-box">
+          <span class="verification-label">Verification Note</span>
+          <p class="verification-text"><strong>Pass.</strong> Clean. Paper buckles against the slot exactly as prompted.</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk operations and verification.</h2>
+        <p>Open to global and remote roles building and running AI pipelines, guardrails and verification systems — and happy to walk through any of the entries above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF VIDEO SAMPLES</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
