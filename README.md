@@ -19,7 +19,7 @@ Below are the direct engineering deep-dives, architecture logs, and production-g
   *Five entries across four systems: a live LLM summary that passed my checker while containing an unverified ranking claim, a forecast model that beat a naive baseline on pair count and lost 3× on volume-weighted WAPE, a validator that scored 14.8% precision on a hard test set before the fix, an n8n retry setting that did not rescue a lost lead, and a prose payload typed as a number. What was wrong, how I noticed, and what I changed.*
 
 *🎬 **[Generative Video Samples](https://emadaed.github.io/digisuite/video-samples.html)**
-*Five AI-generated visual metaphors for the verification log, built with Seedance 2.0 Mini and Veo 3.1 Lite. Includes exact prompts and verification notes, including one documented AI hallucination caught on camera.*
+*Five AI-generated visual metaphors for the verification log, built with Seedance 2.0 Mini and Veo 3.1 Lite. Includes exact prompts and verification notes, including two documented AI deviations caught on camera.*
 
 ### 📘 Engineering Logs & Architecture Deep-Dives
 
