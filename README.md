@@ -13,7 +13,13 @@ Welcome to my digital systems hub. I bring **15+ years of hands-on operations le
 
 Below are the direct engineering deep-dives, architecture logs, and production-grade case studies available in the **[DigiSuite Portfolio Hub](https://emadaed.github.io/digisuite/)**:
 
+### 🔎 Verification Log — Times the Machine Was Wrong and I Caught It
+
+* 🧾 **[Verification Log](https://emadaed.github.io/digisuite/verification-log.html)**  
+  *Five entries across four systems: a live LLM summary that passed my checker while containing an unverified ranking claim, a forecast model that beat a naive baseline on pair count and lost 3× on volume-weighted WAPE, a validator that scored 14.8% precision on a hard test set before the fix, an n8n retry setting that did not rescue a lost lead, and a prose payload typed as a number. What was wrong, how I noticed, and what I changed.*
+
 ### 📘 Engineering Logs & Architecture Deep-Dives
+
 * 📗 **[Engineering Log 01: Guardrails & Hallucination Prevention](https://emadaed.github.io/digisuite/engineering-log.html)**  
   *Building a deterministic safety layer around an LLM agent with live SQL tool-calling and strict citation verification.*
 * 📙 **[Engineering Log 02: Multilingual Semantic Search & Shamela Integration](https://emadaed.github.io/digisuite/engineering-log-2.html)**  
@@ -31,13 +37,20 @@ Below are the direct engineering deep-dives, architecture logs, and production-g
 * 🚪 **[Engineering Log 08: The LLM Selector Failed; the Gate Ships](https://emadaed.github.io/digisuite/engineering-log-8.html)**  
   *Four local models tested as Quranic abstainers. Zero correct abstentions across 24 draws. A two-layer scope-routing gate replaced the failed hypothesis and shipped at the pre-registered threshold: 8/10 out-of-scope catches, 0/4 answerable false positives.*
 * 📕 **[Engineering Log 09: The Pipeline Does Not Generalize — and That's the Finding](https://emadaed.github.io/digisuite/engineering-log-9.html)**  
-  *196 calibration questions pass. 36 fresh questions fail the pre-registered thresholds on both conditions. The 232-question benchmark is published on Hugging Face with both the passing and the failing numbers, and the four-tier promise from Chapter 03 is checked against what was actually built.*  
+  *196 calibration questions pass. 36 fresh questions fail the pre-registered thresholds on both conditions. The 232-question benchmark is published on Hugging Face with both the passing and the failing numbers, and the four-tier promise from Chapter 03 is checked against what was actually built.*
+* 🧾 **[Engineering Log 10: The Lead I Lost — Building an Intake Pipeline and Finding Where It Breaks](https://emadaed.github.io/digisuite/engineering-log-10.html)**  
+  *Failing tests, a join that could silently inflate spend, a lead lost when the API was down, a retry setting that did not rescue it, a reporting copy because Metabase would not read SQLite, and an assistant that quotes instead of writing.*
 * 🧾 **[Engineering Log: Healthcare Data Quality Engine](https://emadaed.github.io/digisuite/engineering-log-healthcare-dq.html)**  
-  *A phase-by-phase build log: a validator that scored 14.8% precision on a deliberately messy test set, the 925 false alarms behind it, and the cleaning layer and rule that fixed it. Same 12 rules verified across Python, SQLite and Azure SQL. Synthetic data.*  
+  *A phase-by-phase build log: a validator that scored 14.8% precision on a deliberately messy test set, the 925 false alarms behind it, and the cleaning layer and rule that fixed it. Same 12 rules verified across Python, SQLite and Azure SQL. Synthetic data.*
+
+### 📊 Case Studies
+
 * 📊 **[Case Study: Wholesale ERP Demand Forecasting Validation](https://emadaed.github.io/digisuite/case-study-forecasting.html)**  
   *12-month backtested evaluation, WAPE analysis, lumpy order detection, and automated Excel worklist generation.*
 * 🛡️ **[Case Study: Healthcare Revenue Cycle Data Quality Engine](https://emadaed.github.io/digisuite/case-study-healthcare-dq.html)**  
   *Twelve documented validation rules, a ground-truth answer key, a four-page Power BI scorecard with row-level security, and an honest account of what the results do and do not prove. Source: [GitHub repo](https://github.com/emadaed/healthcare-data-ops).*
+* 🧾 **[Case Study: Intake-to-Booking Attribution Pipeline](https://emadaed.github.io/digisuite/case-study-intake-booking.html)**  
+  *A synthetic-data pipeline from ad spend to occurred appointments: an n8n intake workflow, a strict Flask API with a field allowlist, a Postgres reporting copy, a four-chart Metabase dashboard, four engineering specs and 71 automated tests. The problem is real; the data is not, and every page says so.*
 
 ---
 
@@ -58,7 +71,9 @@ I build and optimize operational ecosystems that work — combining 15+ years of
 | **GrowEasy ERP** | Full-stack SaaS ERP for SMEs (Inventory, Invoicing, Finance) with live SCM agent data layer. | Python, Flask, Postgres, Redis, Docker | [GrowEasy Site](https://groweasycloud.github.io/groweasy-site) |
 | **Demand Forecasting Engine** | Multi-model B2B demand forecasting engine analyzing 84,741 order lines & 4,307 SKUs. | Python, Pandas, Statsmodels, Streamlit | [Read Log 04](https://emadaed.github.io/digisuite/engineering-log-4.html) \| [Case Study](https://emadaed.github.io/digisuite/case-study-forecasting.html) |
 | **Healthcare Data Quality Engine** | 12-rule validation engine for synthetic healthcare claims. The same rules run in Python, SQLite and Azure SQL and flag identical records; a four-page Power BI report adds a data quality scorecard and row-level security. Synthetic data, measured against its own generator. | Python, pandas, SQL / T-SQL, Azure SQL, Power BI, DAX, pytest | [Case Study](https://emadaed.github.io/digisuite/case-study-healthcare-dq.html) \| [Engineering Log](https://emadaed.github.io/digisuite/engineering-log-healthcare-dq.html) \| [GitHub](https://github.com/emadaed/healthcare-data-ops) |
+| **Intake-to-Booking Pipeline** | End-to-end synthetic-data pipeline from ad spend to occurred appointments: n8n intake, strict Flask API, Postgres reporting copy, four-chart Metabase dashboard, 71 automated tests. The problem is real; the data is simulated and labelled. | Python, Flask, SQL (SQLite, PostgreSQL), n8n, Docker, Metabase, pytest | [Case Study](https://emadaed.github.io/digisuite/case-study-intake-booking.html) \| [Log 10](https://emadaed.github.io/digisuite/engineering-log-10.html) \| [GitHub](https://github.com/emadaed/intake-to-booking) |
 | **Ahmad-AI (RAG Agent)** | Offline multi-turn research agent with hybrid cross-encoder reranking over 113k records; 232-question hand-reviewed Quran retrieval benchmark published on Hugging Face, with its documented failure to generalize; per-bucket routing; two-layer scope-routing gate (LLM intent classifier + keyword backstop) that catches 8/10 out-of-scope questions without showing a wrong verse. | LangGraph, ChromaDB, GATE-Reranker, Ollama, camel-tools, BGE-reranker-v2-m3, command-r7b-arabic | [Log 01](https://emadaed.github.io/digisuite/engineering-log.html) \| [Log 02](https://emadaed.github.io/digisuite/engineering-log-2.html) \| [Log 05](https://emadaed.github.io/digisuite/engineering-log-5.html) \| [Log 06](https://emadaed.github.io/digisuite/engineering-log-6.html) \| [Log 07](https://emadaed.github.io/digisuite/engineering-log-7.html) \| [Log 08](https://emadaed.github.io/digisuite/engineering-log-8.html) \| [Log 09](https://emadaed.github.io/digisuite/engineering-log-9.html) \| [Benchmark on Hugging Face](https://huggingface.co/datasets/ahmad1979/ahmad-eval-v1) |
+| **Verification Log** | Five entries across four systems: a live LLM summary that passed its own checker while containing an unverified ranking claim; a forecast that beat naive on pair count and lost 3× on volume-weighted WAPE; a validator that scored 14.8% precision before the fix; an n8n retry setting that did not rescue a lost lead; a prose payload typed as a number. | — | [Verification Log](https://emadaed.github.io/digisuite/verification-log.html) |
 | **Serverless WMS** | Enterprise fulfillment & order processing platform running inside Google Workspace. | Google Apps Script, Google Sheets | [Source Code](https://emadaed.github.io/digisuite/WH_AppScript.txt) \| [Live Demo](https://docs.google.com/spreadsheets/d/1fFstQ3d4r4HCv1KGCzoLjWhiuZZMQisxaD9OyMWfgXA/edit?usp=sharing) |
 | **Learn With Misham** | Scalable CRM & Learning Management System actively used by education providers. | JavaScript, Google Apps Script, LocalStorage | [Live Platform](https://emadaed.github.io/LearnWithMisham/) |
 
@@ -67,8 +82,8 @@ I build and optimize operational ecosystems that work — combining 15+ years of
 ## 🛠️ Technical Capabilities
 
 * **AI Systems & Agents:** LangGraph, RAG (ChromaDB), Cross-Encoder Reranking (`GATE-Reranker-V1`), WebSockets, Speech-to-Text (Nova-3), Text-to-Speech (Aura-2), Deterministic Guardrails.
-* **Backend & Systems:** Python, Flask, FastAPI, PostgreSQL, Redis, Celery, Docker, Google Apps Script.
-* **Data & BI:** Power BI (DAX, row-level security), T-SQL, Azure SQL Database, SQLite, pandas, data validation and reconciliation, star-schema modelling, pytest.
+* **Backend & Systems:** Python, Flask, FastAPI, PostgreSQL, Redis, Celery, Docker, Google Apps Script, n8n.
+* **Data & BI:** Power BI (DAX, row-level security), T-SQL, Azure SQL Database, SQLite, pandas, data validation and reconciliation, star-schema modelling, pytest, Metabase.
 * **Supply Chain & Management:** Digital Transformation, Demand Forecasting (ETS/Naive), Warehouse Management (WMS), SLA/WLA Governance, PMP®, RMP®.
 
 ---
