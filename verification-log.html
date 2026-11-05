@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verification Log — Times the Machine Was Wrong and I Caught It | Muhammad Ahmad</title>
+<meta name="description" content="Four times an AI or automated system gave me output that passed a check but was wrong — and one smaller instance of the same discipline. What was wrong, how I noticed, and what I did.">
+<link rel="canonical" href="https://emadaed.github.io/digisuite/verification-log.html">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Verification Log — Times the Machine Was Wrong and I Caught It">
+<meta property="og:description" content="I don't trust AI output until it survives a check. Here are four times it didn't, and what I did.">
+<meta property="og:url" content="https://emadaed.github.io/digisuite/verification-log.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%2310161D'/%3E%3Cpath d='M20 55 L50 30 L80 55 M28 50 L28 75 L72 75 L72 50' stroke='%23D9A441' stroke-width='7' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10161D;
+    --bg-deep:#0B0F14;
+    --panel:#171F29;
+    --panel-2:#1C2530;
+    --border:#2A3441;
+    --text:#ECEEF1;
+    --muted:#8B96A3;
+    --amber:#D9A441;
+    --amber-soft:#F0C878;
+    --stamp-live:#4C9A6A;
+    --stamp-open:#6B8CAE;
+    --stamp-dev:#C97D2E;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --body: 'Inter', 'Segoe UI', sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } *{ animation:none !important; transition:none !important; } }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--body); line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a{ color:inherit; }
+  ::selection{ background:var(--amber); color:var(--bg-deep); }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+
+  .wrap{ max-width:1040px; margin:0 auto; padding:0 24px; }
+
+  .manifest-bar{ background:var(--bg-deep); border-bottom:1px solid var(--border); font-family:var(--mono); font-size:12px; letter-spacing:.04em; color:var(--muted); }
+  .manifest-bar .wrap{ display:flex; flex-wrap:wrap; gap:6px 28px; padding:10px 24px; }
+  .manifest-bar span b{ color:var(--amber-soft); font-weight:600; }
+
+  nav{ position:sticky; top:0; z-index:50; background:rgba(16,22,29,.9); backdrop-filter:blur(8px); border-bottom:1px solid var(--border); }
+  nav .wrap{ display:flex; justify-content:space-between; align-items:center; padding:14px 24px; }
+  .logo{ font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.02em; text-decoration:none; }
+  .logo b{ color:var(--amber); }
+  .navlinks{ display:flex; gap:22px; font-size:14px; }
+  .navlinks a{ text-decoration:none; color:var(--muted); }
+  .navlinks a:hover{ color:var(--amber-soft); }
+  .navlinks a.current{ color:var(--amber-soft); }
+  @media (max-width:900px){ .navlinks{ display:none; } }
+
+  .chapter-badge{ display:inline-block; font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--bg-deep); background:var(--amber); padding:4px 10px; border-radius:3px; margin-bottom:16px; }
+
+  .art-header{ padding:64px 0 44px; border-bottom:1px solid var(--border); }
+  .back-link{ font-family:var(--mono); font-size:13px; color:var(--muted); text-decoration:none; display:inline-block; margin-bottom:26px; }
+  .back-link:hover{ color:var(--amber-soft); }
+  .eyebrow{ font-family:var(--mono); font-size:12px; color:var(--amber-soft); letter-spacing:.08em; text-transform:uppercase; margin-bottom:16px; display:block; }
+  .art-header h1{ font-family:var(--display); font-size:clamp(30px,4.6vw,46px); line-height:1.12; margin:0 0 18px; letter-spacing:-.01em; max-width:820px; }
+  .art-header .lede{ color:var(--muted); font-size:17px; max-width:680px; margin:0 0 26px; }
+  .art-header .lede strong{ color:var(--text); }
+  .tagrow{ display:flex; flex-wrap:wrap; gap:10px; }
+  .tag{ font-family:var(--mono); font-size:12.5px; padding:6px 12px; border:1px solid var(--border); border-radius:3px; color:var(--muted); background:var(--panel); }
+  .tag b{ color:var(--amber-soft); }
+
+  .article-body{ padding:56px 0 30px; }
+  .prose{ max-width:760px; margin:0 auto; padding:0 24px; }
+  .article-body h2{ font-family:var(--display); font-size:23px; margin:46px 0 16px; letter-spacing:-.01em; color:var(--text); }
+  .article-body h2:first-child{ margin-top:0; }
+  .article-body p{ color:var(--muted); font-size:16px; margin:0 0 18px; }
+  .article-body p strong{ color:var(--text); }
+
+  .vcard{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:8px; padding:24px 26px; margin:22px 0; }
+  .vcard .vhead{ display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; margin-bottom:6px; }
+  .vcard .vnum{ font-family:var(--mono); font-size:12px; color:var(--amber); letter-spacing:.08em; }
+  .vcard h3{ font-family:var(--display); font-size:19px; margin:0; color:var(--text); letter-spacing:-.01em; }
+  .vcard .vmeta{ font-family:var(--mono); font-size:11.5px; color:var(--muted); letter-spacing:.04em; margin-bottom:14px; display:block; }
+  .vcard .row{ display:grid; grid-template-columns:110px 1fr; gap:8px 16px; margin:0 0 10px; font-size:15px; }
+  .vcard .row .k{ font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--amber-soft); padding-top:3px; }
+  .vcard .row .v{ color:#D5D9DF; }
+  .vcard .row .v strong{ color:var(--text); }
+  .vcard .row .v code{ font-family:var(--mono); font-size:.9em; background:var(--panel-2); border:1px solid var(--border); padding:1px 6px; border-radius:3px; color:var(--amber-soft); }
+  .vcard .lesson{ font-family:var(--mono); font-size:13px; color:var(--amber-soft); border-top:1px dashed var(--border); padding-top:12px; margin-top:14px; }
+  .vcard .vlinks{ display:flex; flex-wrap:wrap; gap:16px; margin-top:14px; }
+  .vcard .vlinks a{ font-size:13.5px; font-weight:600; color:var(--amber-soft); text-decoration:none; }
+  .vcard .vlinks a:hover{ text-decoration:underline; }
+  @media (max-width:640px){ .vcard .row{ grid-template-columns:1fr; gap:2px 0; } .vcard .row .k{ padding-top:8px; } }
+
+  .vcard.small{ padding:18px 22px; }
+  .vcard.small h3{ font-size:16px; }
+  .vcard.small .row{ font-size:14.5px; }
+
+  .rulebox{ background:var(--panel); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:6px; padding:20px 24px; margin:34px 0 10px; }
+  .rulebox h3{ font-family:var(--display); font-size:17px; margin:0 0 10px; color:var(--text); }
+  .rulebox ol{ margin:0; padding-left:22px; color:var(--muted); font-size:15.5px; }
+  .rulebox li{ margin-bottom:6px; }
+  .rulebox li strong{ color:var(--text); }
+
+  footer{ padding:60px 0 40px; border-top:1px solid var(--border); margin-top:40px; }
+  .foot-top{ display:flex; justify-content:space-between; flex-wrap:wrap; gap:30px; margin-bottom:40px; }
+  .foot-cta h2{ font-family:var(--display); font-size:26px; margin:0 0 10px; }
+  .foot-cta p{ color:var(--muted); max-width:420px; margin:0; }
+  .foot-links{ display:flex; flex-direction:column; gap:10px; font-size:14.5px; }
+  .foot-links a{ text-decoration:none; color:var(--text); display:flex; gap:10px; align-items:center; }
+  .foot-links a:hover{ color:var(--amber-soft); }
+  .foot-links .k{ font-family:var(--mono); color:var(--muted); font-size:12px; width:64px; }
+  .end-manifest{ font-family:var(--mono); font-size:11.5px; color:var(--muted); border-top:1px dashed var(--border); padding-top:20px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+
+<div class="manifest-bar">
+  <div class="wrap">
+    <span>DOCUMENT: <b>Verification Log</b></span>
+    <span>SUBJECT: <b>Times the machine was wrong and I caught it</b></span>
+    <span>STATUS: <b>5 entries · 4 systems · 1 live run</b></span>
+  </div>
+</div>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="index.html">MUHAMMAD<b>.</b>AHMAD</a>
+    <div class="navlinks">
+      <a href="index.html#expertise">Expertise</a>
+      <a href="index.html#experience">Experience</a>
+      <a href="index.html#systems">Systems Built</a>
+      <a href="verification-log.html" class="current">Verification Log</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+  </div>
+</nav>
+
+<header class="art-header">
+  <div class="wrap">
+    <a class="back-link" href="index.html#systems">&larr; Back to Systems Built</a>
+    <span class="chapter-badge">Verification Log</span>
+    <span class="eyebrow">Operational discipline &middot; AI output verification</span>
+    <h1>Verification Log: Times the Machine Was Wrong and I Caught It</h1>
+    <p class="lede">I don't trust AI output until it survives a check. Here are <strong>four times it didn't</strong> — and what I did — plus one smaller instance of the same discipline. Each entry names the tool, what it gave me, how I noticed, and what I changed.</p>
+    <div class="tagrow">
+      <span class="tag"><b>4</b> systems</span>
+      <span class="tag"><b>1</b> live run</span>
+      <span class="tag"><b>0</b> unverified claims shipped</span>
+      <span class="tag"><b>2</b> hard-coded guardrails added</span>
+    </div>
+  </div>
+</header>
+
+<section class="article-body">
+  <div class="prose">
+
+    <h2>The entries</h2>
+
+    <!-- ================= ENTRY 1 ================= -->
+    <div class="vcard">
+      <div class="vhead">
+        <span class="vnum">01</span>
+        <h3>The summary passed my checker and still contained an unverified claim</h3>
+      </div>
+      <span class="vmeta">LLM summary generator + rule-based checker · live run · Engineering Log 10</span>
+
+      <div class="row"><span class="k">Tool</span><span class="v">A language model wrote the weekly funnel summary; a rule-based checker verified every number against the database before it was sent.</span></div>
+      <div class="row"><span class="k">What it gave</span><span class="v">A summary that <strong>passed verification</strong> (attempt 1: passed). Every number was filled in from the database — the model wrote none. But one sentence said <em>"$968 and $699 being the largest contributors"</em> — a <strong>ranking claim</strong> that no code had computed.</span></div>
+      <div class="row"><span class="k">How I noticed</span><span class="v">The checker's checked-word list did not include <code>largest</code>. The pass was conditional on the checker's blind spots — I read the output against the check and saw the word that slipped through.</span></div>
+      <div class="row"><span class="k">What I did</span><span class="v">(1) Added <code>largest</code>, <code>smallest</code>, <code>biggest</code>, <code>leading</code>, <code>dominant</code>, <code>majority</code>, <code>contributors</code> to the checked words. (2) Gave the model a legitimate route: new code-computed facts <code>rank.top_spend_channel</code> and <code>rank.top_spend</code>. (3) Confirmed the exact sentence from the live run is now rejected.</span></div>
+
+      <div class="lesson">The checker guards only the words it knows. A live run against real output is what catches the blind spots.</div>
+      <div class="vlinks">
+        <a href="engineering-log-10.html">Read the full log &rarr;</a>
+        <a href="case-study-intake-booking.html">Case study &rarr;</a>
+      </div>
+    </div>
+
+    <!-- ================= ENTRY 2 ================= -->
+    <div class="vcard">
+      <div class="vhead">
+        <span class="vnum">02</span>
+        <h3>The forecast model beat a naive baseline on pair count and lost 3&times; on the metric that matters</h3>
+      </div>
+      <span class="vmeta">Statsmodels ETS (Demand Forecasting Engine) · 12-month holdout · Case Study</span>
+
+      <div class="row"><span class="k">Tool</span><span class="v">ETS with additive trend and seasonality, selected per SKU via expanding-window backtesting.</span></div>
+      <div class="row"><span class="k">What it gave</span><span class="v">A forecast that beat the naive baseline on <strong>58% of pairs</strong> — but <strong>lost 3&times; on volume-weighted WAPE</strong> (178.7% vs 65.5%). On the top SKU it over-forecast by 155%, because ETS extrapolated a lumpy B2B order spike as trend.</span></div>
+      <div class="row"><span class="k">How I noticed</span><span class="v">A 12-month holdout scored with <strong>volume-weighted WAPE</strong>, not just pair-count win rate. The flattering number (58%) and the honest number (3&times; worse on the SKUs that carry the business) diverged, and the honest one was the decision-relevant one.</span></div>
+      <div class="row"><span class="k">What I did</span><span class="v">Surfaced the failure mode <strong>before anyone acted on a number</strong>. The app's reliability layer flagged 84 of 92 pairs Low; v2 adds a hard-coded trust rule that refuses to auto-dispatch an order on any flagged SKU, and reports <code>recommended_order_qty_if_validated</code> as the number the analyst takes into the customer call.</span></div>
+
+      <div class="lesson">Honest metrics beat flattering metrics. Report the volume-weighted number, unprompted.</div>
+      <div class="vlinks">
+        <a href="case-study-forecasting.html">Read the case study &rarr;</a>
+        <a href="engineering-log-4.html">Engineering log &rarr;</a>
+      </div>
+    </div>
+
+    <!-- ================= ENTRY 3 ================= -->
+    <div class="vcard">
+      <div class="vhead">
+        <span class="vnum">03</span>
+        <h3>The validator scored 14.8% precision — 925 false alarms — and I proved it after the fix</h3>
+      </div>
+      <span class="vmeta">Python rules engine (Healthcare Data Quality) · 182-anomaly hard test set · Case Study</span>
+
+      <div class="row"><span class="k">Tool</span><span class="v">A 12-rule Python validator over synthetic healthcare claims, scored against a ground-truth answer key the generator had logged.</span></div>
+      <div class="row"><span class="k">What it gave</span><span class="v"><strong>14.8% precision</strong> on the hard test set — <strong>925 false alarms</strong> and 21 real errors missed. 314 valid claims flagged "missing service date" because of US date format; 144 good payments flagged "orphan" because of stray spaces or case in the claim ID.</span></div>
+      <div class="row"><span class="k">How I noticed</span><span class="v">Scored against the ground-truth manifest with precision and recall, not eyeballed. The easy set had scored 100%/100% — which was circular, because the rules had been written to match the errors I injected. The hard set broke that circle.</span></div>
+      <div class="row"><span class="k">What I did</span><span class="v">Added a cleaning layer (trim, case, two date formats, currency text) that logs what it corrected and <strong>never counts it as a failure</strong>, plus a twelfth rule for near-duplicate billing. Result: <strong>182 of 182 found, zero false alarms</strong>, 27 tests. Each legitimate look-alike has its own unit test. Parity confirmed across Python, SQLite and Azure SQL.</span></div>
+
+      <div class="lesson">Score against a ground-truth answer key, not against your own expectation. Easy-set 100% can be circular.</div>
+      <div class="vlinks">
+        <a href="case-study-healthcare-dq.html">Read the case study &rarr;</a>
+        <a href="engineering-log-healthcare-dq.html">Engineering log &rarr;</a>
+      </div>
+    </div>
+
+    <!-- ================= ENTRY 4 ================= -->
+    <div class="vcard">
+      <div class="vhead">
+        <span class="vnum">04</span>
+        <h3>The retry setting I trusted did not rescue the lead I lost</h3>
+      </div>
+      <span class="vmeta">n8n intake workflow + Flask API · failure-path test · Engineering Log 10</span>
+
+      <div class="row"><span class="k">Tool</span><span class="v">n8n webhook workflow calling a strict Flask API. The HTTP node had <strong>"Retry On Fail"</strong> switched on.</span></div>
+      <div class="row"><span class="k">What it gave</span><span class="v">With the API stopped, a test lead was lost. The lead existed <strong>only in n8n's execution history</strong>. "Retry On Fail" fired <strong>no retries</strong> on a connection-refused error. I also found two more weaknesses: a 422 (do not retry) and a 500 (retry) took the same path, and the rejected-lead log called the same API — so it failed too.</span></div>
+      <div class="row"><span class="k">How I noticed</span><span class="v">Deliberately <strong>tested the failure path</strong> — stopped the API, sent a lead, watched the node. The setting's name promised behaviour the test disproved.</span></div>
+      <div class="row"><span class="k">What I did</span><span class="v">Wrote the observed result down instead of the expected one, and turned it into an <strong>engineering spec</strong>: a durable inbox, classified retries, an alert — and duplicate-lead prevention first, because retries are only safe once duplicates can't happen. Added to a 10-item automation backlog.</span></div>
+
+      <div class="lesson">Test what happens when a dependency is down on day one. A setting's name is not evidence of its behaviour.</div>
+      <div class="vlinks">
+        <a href="engineering-log-10.html">Read the full log &rarr;</a>
+        <a href="case-study-intake-booking.html">Case study &rarr;</a>
+      </div>
+    </div>
+
+    <!-- ================= ENTRY 5 (smaller, same discipline) ================= -->
+    <div class="vcard small">
+      <div class="vhead">
+        <span class="vnum">05</span>
+        <h3>A prose payload typed as a number — n8n's strict validation caught it before send</h3>
+      </div>
+      <span class="vmeta">n8n field schema · live run · same class as #04</span>
+
+      <div class="row"><span class="k">What it gave</span><span class="v">The n8n node had its <code>report</code> field declared as a <strong>number</strong>, but the workflow was sending the full <em>"Weekly funnel report…"</em> text — a string. n8n rejected the request: <em>"'report' expects a number but we got 'Weekly funnel report…'"</em>.</span></div>
+      <div class="row"><span class="k">How I noticed</span><span class="v">The error surfaced on a live run before the request went out — the strict type check did its job.</span></div>
+      <div class="row"><span class="k">What I did</span><span class="v">Changed the field's type to <strong>string</strong> (the correct fix), not the <em>"Ignore Type Conversion Errors"</em> toggle (a band-aid that hides future mismatches).</span></div>
+      <div class="lesson">Fix the schema, not the toggle. Strict validation is a feature when the payload is prose.</div>
+      <div class="vlinks">
+        <a href="engineering-log-10.html">Read the full log &rarr;</a>
+      </div>
+    </div>
+
+    <!-- ================= THE RULE BOX ================= -->
+    <div class="rulebox">
+      <h3>The reusable rule I apply every time</h3>
+      <ol>
+        <li><strong>Check against the source.</strong> Every number, date, name, phone number and ranking claim is traced to the real source before it is sent or acted on.</li>
+        <li><strong>Check the metric that matters.</strong> The flattering number (pair-count win rate, easy-set precision, "retry on fail" setting) is not the decision-relevant one. Use the volume-weighted, hard-set, failure-path number.</li>
+        <li><strong>Flag, don't skip.</strong> When a step can't be done or a claim can't be verified, say so in writing — never skip it quietly.</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-cta">
+        <h2>Let's talk operations and verification.</h2>
+        <p>Open to global and remote roles building and running AI pipelines, guardrails and verification systems — and happy to walk through any of the entries above.</p>
+      </div>
+      <div class="foot-links">
+        <a href="mailto:muhammad.a.ahmed@gmail.com"><span class="k">EMAIL</span> muhammad.a.ahmed@gmail.com</a>
+        <a href="https://linkedin.com/in/muhammad-ahmad-scm" target="_blank" rel="noopener noreferrer"><span class="k">LINKEDIN</span> /in/muhammad-ahmad-scm</a>
+        <a href="https://wa.me/923095222202" target="_blank" rel="noopener noreferrer"><span class="k">WHATSAPP</span> +92 309 5222202</a>
+        <a href="https://github.com/emadaed" target="_blank" rel="noopener noreferrer"><span class="k">GITHUB</span> /emadaed</a>
+      </div>
+    </div>
+    <div class="end-manifest">
+      <span>&copy; 2026 Muhammad Ahmad — Lahore, Pakistan</span>
+      <span>END OF VERIFICATION LOG</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
