@@ -249,7 +249,7 @@
       <span class="tag"><b>AI Agent</b> Engineering</span>
       <span class="tag"><b>15+ YRS</b> Operations Leadership</span>
       <span class="tag"><b>PMP&reg; / RMP&reg;</b> PMI Certified</span>
-      <span class="tag"><b>7</b> Systems Built</span>
+      <span class="tag"><b>8</b> Systems Built</span>
       <span class="tag"><b>MSc</b> Supply Chain Mgmt</span>
     </div>
     <div class="cta-row">
@@ -312,8 +312,8 @@
         <span class="stamp dev">Built &middot; Synthetic data</span>
         <h3>Intake-to-Booking Attribution Pipeline</h3>
         <img class="card-img" src="assets/intake-booking-dashboard.png" alt="Intake-to-Booking dashboard with four charts: cost per booking versus per occurred appointment, show rate by channel, monthly occurred appointments, and rejected leads" loading="lazy">
-        <p><em>From ad spend to the appointments that actually happen.</em> A synthetic-data pipeline built end to end: an n8n intake workflow feeds a strict Flask API (a field allowlist, so no contact or health data is accepted), a SQLite operational database, a Postgres reporting copy and a four-chart Metabase dashboard. The simulated result: Meta looks cheapest per booking (about $41 versus $82 for Google), but only 49% of its booked visits happen, so the gap narrows to about $87 versus $106 per occurred appointment. Documented failures include a lead lost when the API is down, and n8n's Retry On Fail did not rescue it, which became an engineering spec. Also ships a backlog, four engineering specs and a rule-based staff knowledge assistant. <strong>71 automated tests.</strong></p>
-        <div class="stackrow"><span>Python</span><span>Flask</span><span>SQL</span><span>n8n</span><span>Docker</span><span>PostgreSQL</span><span>Metabase</span><span>pytest</span></div>
+        <p><em>From ad spend to the appointments that actually happen.</em> A synthetic-data pipeline built end to end: an n8n intake workflow feeds a strict Flask API (a field allowlist, so no contact or health data is accepted), a SQLite operational database, a Postgres reporting copy and a four-chart Metabase dashboard. The simulated result: Meta looks cheapest per booking (about $41 versus $82 for Google), but only 49% of its booked visits happen, so the gap narrows to about $87 versus $106 per occurred appointment. Documented failures include a lead lost when the API is down, and n8n's Retry On Fail did not rescue it, which became an engineering spec. Also ships a backlog, four engineering specs, a rule-based staff knowledge assistant and a weekly funnel report where a local LLM writes the sentences and code verifies every number (7 of 10 summaries pass on the first try, small sample). <strong>124 automated tests.</strong></p>
+        <div class="stackrow"><span>Python</span><span>Flask</span><span>SQL</span><span>n8n</span><span>Docker</span><span>PostgreSQL</span><span>Metabase</span><span>Ollama</span><span>pytest</span></div>
         <div class="card-links">
           <a href="engineering-log-10.html">Read Engineering Log &rarr;</a>
           <a href="case-study-intake-booking.html">Case Study &rarr;</a>
@@ -404,7 +404,6 @@
     <div class="credrow">
       <span class="cred"><b>MSc</b> Operations &amp; Supply Chain Management</span>
       <span class="cred"><b>PMP&reg;</b> Project Management Professional — PMI</span>
-      <span class="cred"><b>RMP&reg;</b> Risk Management Professional — PMI</span>
       <span class="cred"><b>ITIL&reg;</b> Foundation</span>
       <span class="cred"><b><B class="Sc">B.Sc</B>.</b> Mass Communication</span>
       <span class="cred"><b>1 Year Diploma</b> Telecom Engineering</span>

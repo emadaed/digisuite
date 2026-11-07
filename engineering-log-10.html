@@ -10,7 +10,7 @@
 
 <meta property="og:type" content="article">
 <meta property="og:title" content="The Lead I Lost: Building an Intake Pipeline and Finding Where It Breaks &mdash; Engineering Log 10">
-<meta property="og:description" content="Six things that broke while building an intake pipeline, and what each one taught me.">
+<meta property="og:description" content="What broke while building an intake pipeline and a code-verified LLM report, and what each failure taught me.">
 <meta property="og:url" content="https://emadaed.github.io/digisuite/engineering-log-10.html">
 <meta property="og:image" content="https://emadaed.github.io/digisuite/assets/intake-booking-dashboard.png">
 <meta name="twitter:card" content="summary">
@@ -114,7 +114,7 @@
   <div class="wrap">
     <span>DOCUMENT: <b>Intake-to-Booking &middot; Log 10</b></span>
     <span>SUBJECT: <b>Spend to Occurred Appointments</b></span>
-    <span>STATUS: <b>Built &middot; Synthetic data &middot; 71 tests</b></span>
+    <span>STATUS: <b>Built &middot; Synthetic data &middot; 124 tests</b></span>
   </div>
 </div>
 
@@ -125,8 +125,6 @@
       <a href="index.html#expertise">Expertise</a>
       <a href="index.html#experience">Experience</a>
       <a href="index.html#systems">Systems Built</a>
-      <a href="verification-log.html">Verification Log</a>
-      <a href="video-samples.html">Video Samples</a>
       <a href="engineering-log.html">Ahmad-AI &middot; Log</a>
       <a href="engineering-log-2.html">Log 02</a>
       <a href="engineering-log-3.html">Voice AI &middot; Log 03</a>
@@ -143,13 +141,14 @@
     <span class="chapter-badge">Intake-to-Booking &middot; Log 10</span>
     <span class="eyebrow">Engineering Log 10 &mdash; Marketing &amp; Operations Analytics</span>
     <h1>The Lead I Lost: Building an Intake Pipeline and Finding Where It Breaks</h1>
-    <p class="lede">Failing tests, a join that could silently inflate cost, a lead lost when the API was down, and a retry setting that did not rescue it. What broke, what I changed, and what I wrote down instead of pretending it was fixed.</p>
+    <p class="lede">Failing tests, a join that could silently inflate cost, a lead lost when the API was down, a retry setting that did not rescue it, and a checker that approved a model's wrong sentence. What broke, what I changed, and what I wrote down instead of pretending it was fixed.</p>
     <div class="tagrow">
       <span class="tag"><b>Python</b> &middot; Flask</span>
       <span class="tag"><b>SQL</b> &middot; SQLite &middot; PostgreSQL</span>
       <span class="tag"><b>n8n</b> workflow</span>
       <span class="tag"><b>Metabase</b> dashboard</span>
-      <span class="tag"><b>pytest</b> 71 tests</span>
+      <span class="tag"><b>Ollama</b> local LLM</span>
+      <span class="tag"><b>pytest</b> 124 tests</span>
     </div>
     <div class="chapter-nav">
       <a href="case-study-intake-booking.html">Case Study: Intake-to-Booking</a>
@@ -202,6 +201,12 @@
     <p>Two findings from my own testing. First, my question &ldquo;How much notice is needed to cancel?&rdquo; got no answer, because the policy said &ldquo;24 hours before&rdquo; and never used the word &ldquo;notice&rdquo;. I rewrote the policy in the words staff would use. Second, while testing I found a tension I have <strong>not fixed yet</strong>: the privacy rule refuses a numeric case ID, but the privacy policy tells staff to use case IDs. The checker cannot tell a case number from a member ID. The fix is a defined case-ID format, and it is on my list.</p>
     <p>The 50 tests for this assistant were written by me, so they show the guardrails fire as designed. They say nothing about accuracy on real questions, and the case study says so.</p>
 
+    <h2>Step 6: a report where the model writes words and code owns the numbers</h2>
+    <p>I wanted a weekly plain-language summary of the funnel written by a language model, without trusting the model with a single number. The model gets named placeholders such as <code>{total.spend}</code> and writes the sentences around them. Code computes every figure from the database, fills the placeholders in, and rejects any text that breaks the rules: a digit outside a placeholder, an unknown placeholder, causal wording, a ranking or direction word without the matching placeholder. Three rejected tries fall back to a fixed template, and an unverified summary is never published.</p>
+    <p>The first live run passed my checks, and I read the sentences anyway. It called two channels &ldquo;the largest contributors&rdquo;, a ranking word my checker did not know. After I fixed that, the next run named one channel as having the highest show rate when two were tied at 67%, because I had decided ties on unrounded values. The run after that wrote &ldquo;decreasing by within 2%&rdquo;: its own direction word next to my number, for a channel that was flat. Each time I fixed the checker (more words, ties decided on the displayed value, no direction words written by the model, a channel name must match the data in its sentence) and added a test for the exact sentence that slipped through.</p>
+    <p>Then the measurement. After the checker was tightened, only 3 of 10 summaries passed on the first try: a prompt rule telling the model not to write direction words was not enough. Adding one worked example to the prompt raised that to 7 of 10, and a separate run of 5 complete reports (up to three attempts each) passed on the first attempt all 5 times. These are small samples on one local model, so I report them as measurements, not guarantees. The checks guarantee the numbers and guard the wording; they cannot prove a sentence is a fair reading of the numbers.</p>
+    <p>An API endpoint serves the report and an n8n workflow schedules it weekly. It builds the report but does not send it anywhere yet, and it runs only while my machine, n8n and the API are on.</p>
+
     <h2>What the dashboard says, and what it does not</h2>
     <p>Meta looks cheapest per booking, but only about half of its booked visits happen, so the gap narrows per occurred appointment. I chose those rates when building the data. October looks low because appointments after 31 October are still &ldquo;scheduled&rdquo; rather than &ldquo;occurred&rdquo;, which is not a real decline. I wrote that into the documentation because a reader will ask.</p>
 
@@ -210,6 +215,7 @@
       <li>Write the command for every step, including the ones that feel obvious.</li>
       <li>Test what happens when a dependency is down on the first day, not the last.</li>
       <li>Record what you observed, not what you expected. My expectation about retries was wrong, and writing the real result down was worth more than the guess.</li>
+      <li>Read the model's actual output, not just whether it passed. My checker approved wrong sentences that my tests had missed.</li>
       <li>Say what is simulated, what is designed but not built, and what is built.</li>
     </ul>
     <p>The case study is in <a href="case-study-intake-booking.html"><strong>Case Study: Intake-to-Booking</strong></a>, and the code, tests, backlog and four engineering specs are in the <a href="https://github.com/emadaed/intake-to-booking" target="_blank" rel="noopener noreferrer"><strong>GitHub repository</strong></a>.</p>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Intake-to-Booking Attribution Pipeline &mdash; Case Study | Muhammad Ahmad</title>
-<meta name="description" content="A case study on a synthetic-data pipeline that traces ad spend to appointments that actually happen: n8n intake workflow, a strict Flask API, a Postgres reporting copy, a Metabase dashboard, four engineering specs and 71 automated tests.">
+<meta name="description" content="A case study on a synthetic-data pipeline that traces ad spend to appointments that actually happen: n8n intake workflow, a strict Flask API, a Postgres reporting copy, a Metabase dashboard, a weekly LLM report whose numbers are verified by code, four engineering specs and 124 automated tests.">
 <meta name="keywords" content="Marketing Attribution, Data Pipeline, n8n, Flask, PostgreSQL, Metabase, SQL, Healthcare Operations, pytest">
 <link rel="canonical" href="https://emadaed.github.io/digisuite/case-study-intake-booking.html">
 
@@ -114,7 +114,7 @@
   <div class="wrap">
     <span>DOCUMENT: <b>Intake-to-Booking Attribution Pipeline &middot; Case Study</b></span>
     <span>SUBJECT: <b>Spend to Occurred Appointments</b></span>
-    <span>STATUS: <b>Built &middot; Synthetic data &middot; 71 tests</b></span>
+    <span>STATUS: <b>Built &middot; Synthetic data &middot; 124 tests</b></span>
   </div>
 </div>
 
@@ -147,7 +147,8 @@
       <span class="tag"><b>SQL</b> &middot; SQLite &middot; PostgreSQL</span>
       <span class="tag"><b>n8n</b> workflow</span>
       <span class="tag"><b>Metabase</b> dashboard</span>
-      <span class="tag"><b>pytest</b> 71 tests</span>
+      <span class="tag"><b>Ollama</b> local LLM</span>
+      <span class="tag"><b>pytest</b> 124 tests</span>
     </div>
     <div class="chapter-nav">
       <a href="case-study-intake-booking.html" class="active">Case Study: Intake-to-Booking</a>
@@ -174,8 +175,9 @@
       <tr><td>Reporting copy</td><td>PostgreSQL in Docker, refreshed by a script that checks row counts and total spend before it commits</td></tr>
       <tr><td>Dashboard</td><td>Metabase, four charts</td></tr>
       <tr><td>Staff knowledge assistant</td><td>Quotes approved policy text only, with code-level refusals for patient identifiers, clinical questions and emergencies</td></tr>
+      <tr><td>Weekly funnel report</td><td>A local language model writes the sentences; code fills in and verifies every number, with a fixed-template fallback, an API endpoint and a weekly n8n schedule</td></tr>
       <tr><td>Backlog and specs</td><td>Ten backlog items and four engineering specs for what I did not build</td></tr>
-      <tr><td>Tests</td><td><strong>71 automated tests</strong>: 8 on the data, 13 on the API, 50 on the assistant</td></tr>
+      <tr><td>Tests</td><td><strong>124 automated tests</strong>: 8 on the data, 13 on the API, 50 on the assistant, 53 on the weekly report and its endpoint</td></tr>
     </table>
     <img src="assets/intake-booking-dashboard.png" alt="Metabase dashboard with four charts: cost per booking versus per occurred appointment by paid channel, show rate by channel, occurred appointments per month by channel, and rejected leads by reason" loading="lazy">
     <p class="caption">The four-chart dashboard, built on the Postgres reporting copy. All data is synthetic.</p>
@@ -206,22 +208,28 @@
       <tr><td>The API rejected a lead for an unexpected field</td><td>My own node sent an extra field</td><td>The strict allowlist did its job</td></tr>
       <tr><td>Metabase would not accept the database login</td><td>Most likely browser autofill, not confirmed</td><td>Set a known password and use a private window</td></tr>
       <tr><td>My own test question got no answer from the assistant</td><td>The policy never used the word I searched for</td><td>Write documents in the words staff actually use</td></tr>
+      <tr><td>The weekly report's checker approved a wrong claim and a tie reported as one winner; the model wrote its own direction words</td><td>Gaps in my own checker: an unlisted ranking word, ties decided on unrounded values, a direction placeholder merely nearby</td><td>Fixed each one and tested the exact sentence that slipped through</td></tr>
       <tr><td><strong>A lead was lost when the API was stopped</strong></td><td>Described below</td><td>Became an engineering spec</td></tr>
     </table>
 
     <h2>The gap in my own design</h2>
     <p>With the HTTP node's &ldquo;Never Error&rdquo; setting on, a 422 from the API is routed to a rejected branch. With the API stopped there is no response at all: the node failed with a connection error and the lead existed only in n8n's run history. I also noticed that the rejected-lead log calls the same API, so it fails too, and that a 422 (do not retry) and a 500 (retry) take the same path. I then tried n8n's Retry On Fail with the API stopped: no retries were observed and the lead was still lost. A real fix needs a durable inbox and classified retries, and retries are only safe once duplicate leads are prevented. All of it is written up as engineering specs.</p>
 
+    <h2>The weekly report: the model writes words, code owns the numbers</h2>
+    <p>The model gets named placeholders such as <code>{total.spend}</code> and writes the sentences around them. Code computes every figure from the database, fills the placeholders in, and rejects text that breaks the rules: a digit written outside a placeholder, an unknown placeholder, causal wording, a direction or ranking word without the matching placeholder, a channel name that does not match its data. After three rejected tries the report falls back to a fixed template, and an unverified summary is never published.</p>
+    <p>Measured on a local 8B model: <strong>7 of 10 summaries passed on the first try</strong> with the final checker and prompt (3 of 10 before one worked example was added to the prompt), and a separate run of 5 complete reports passed on the first attempt 5 times. These are small samples on one model. The checks guarantee the numbers and guard the wording; they cannot prove a sentence is a fair reading of the numbers, which is why reading the live output mattered: it found three gaps my tests had not.</p>
+
     <h2>What I did not build</h2>
     <ul>
       <li>No real data: ad spend and appointment outcomes are simulated. Specs describe real feeds.</li>
       <li>No Matomo and no GoHighLevel. I wrote an event and dimension design for Matomo and have not run it.</li>
       <li>No authentication, monitoring or production hardening; it runs on one machine.</li>
-      <li>No language model yet. The knowledge assistant is rule-based and was tested only on questions I wrote myself, so it proves its guardrails work, not that its answers are accurate on real staff questions.</li>
+      <li>The knowledge assistant is rule-based and was tested only on questions I wrote myself, so it proves its guardrails work, not that its answers are accurate on real staff questions.</li>
+      <li>The weekly report builds and verifies on a schedule but does not send the report anywhere yet, and it runs only while my machine, n8n and the API are on. Its pass rates come from small samples on one local model.</li>
     </ul>
 
     <h2>What I would do next</h2>
-    <p>Build duplicate-lead protection, then the outage handling that depends on it. Add a weekly plain-language report of the funnel numbers, with code that checks every number in the text against the database. Fix a tension I found in the assistant: its privacy rule refuses a numeric case ID, although the privacy policy tells staff to use case IDs.</p>
+    <p>Build duplicate-lead protection, then the outage handling that depends on it. Deliver the weekly report (email or chat) and re-measure its pass rate on more runs and a second model. Fix a tension I found in the assistant: its privacy rule refuses a numeric case ID, although the privacy policy tells staff to use case IDs.</p>
     <p>The full source, tests, backlog and specs are in the <a href="https://github.com/emadaed/intake-to-booking" target="_blank" rel="noopener noreferrer"><strong>GitHub repository</strong></a>. The story of the mistakes is in <a href="engineering-log-10.html"><strong>Engineering Log 10</strong></a>.</p>
 
   </div>
