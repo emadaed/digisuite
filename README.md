@@ -53,7 +53,7 @@ Below are the direct engineering deep-dives, architecture logs, and production-g
 * 🛡️ **[Case Study: Healthcare Revenue Cycle Data Quality Engine](https://emadaed.github.io/digisuite/case-study-healthcare-dq.html)**  
   *Twelve documented validation rules, a ground-truth answer key, a four-page Power BI scorecard with row-level security, and an honest account of what the results do and do not prove. Source: [GitHub repo](https://github.com/emadaed/healthcare-data-ops).*
 * 🧾 **[Case Study: Intake-to-Booking Attribution Pipeline](https://emadaed.github.io/digisuite/case-study-intake-booking.html)**  
-  *A synthetic-data pipeline from ad spend to occurred appointments: an n8n intake workflow, a strict Flask API with a field allowlist, a Postgres reporting copy, a four-chart Metabase dashboard, four engineering specs and 71 automated tests. The problem is real; the data is not, and every page says so.*
+  *A synthetic-data pipeline from ad spend to occurred appointments: an n8n intake workflow, a strict Flask API with a field allowlist, a Postgres reporting copy, a four-chart Metabase dashboard, four engineering specs and 124 automated tests. The problem is real; the data is not, and every page says so.*
 
 ---
 
